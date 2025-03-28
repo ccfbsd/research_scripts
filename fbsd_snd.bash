@@ -1,9 +1,9 @@
 #!/bin/bash
 
 if [  $# -ne 3 ]; then
-	echo -e "\nUsage:\n$0 <name> <src> <dst>\n"
+    echo -e "\nUsage:\n$0 <name> <src> <dst>\n"
     echo -e "example: bash $0 cubic s1 r1\n"
-	exit 1
+    exit 1
 fi
 
 name=$1              # TCP congestion control name
@@ -33,7 +33,7 @@ if [[ -f "${log_review_tool}" && -x "${log_review_tool}" ]]; then
     echo "${log_review_tool} exists and is executable."
 else
     echo "${log_review_tool} does not exist or is not executable."
-	exit 1
+    exit 1
 fi
 
 dir=$(pwd)
