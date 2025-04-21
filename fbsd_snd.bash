@@ -76,8 +76,17 @@ siftr2_log_abs_path=$(realpath /var/log/${siftr_name})
 flow_id=$(${log_review_tool} -f "${siftr2_log_abs_path}" | awk -F'id:' '{print $2}' | awk '{print $1}' | tr -d '\r\n')
 ${log_review_tool} -f "${siftr2_log_abs_path}" -p "${src}" -s "${flow_id}" >> "${log_name}" 2>&1
 
-max_cwnd=$(grep "max_cwnd" "${log_name}" | awk '{printf "%d\n", $4}')
-ymax=$(echo "$max_cwnd * 1.25" | bc)
+cwnd_stats=$(grep "avg_cwnd:" "${log_name}" | awk '{$1=$1; print}')
+#echo "[${cwnd_stats}]"
+srtt_stats=$(grep "avg_srtt:" "${log_name}" | awk '{$1=$1; print}')
+#echo "[${srtt_stats}]"
+
+max_cwnd=$(grep "max_cwnd" "${log_name}" | awk '{printf "%d\n", $6}')
+ymax_cwnd=$(echo "$max_cwnd * 1.25" | bc)
+max_srtt=$(grep "max_srtt" "${log_name}" | awk '{printf "%d\n", $6}')
+ymax_srtt=$(echo "$max_srtt * 1.25" | bc)
+#echo "[${max_cwnd}][${ymax_cwnd}]"
+#echo "[${max_srtt}][${ymax_srtt}]"
 
 plot_file=${src}.${flow_id}.txt
 
@@ -88,30 +97,50 @@ rm ${siftr2_log_abs_path}; rm ${tmp_name}
 
 echo "generating gnuplot figure..."
 
-title_str="${src} ${name} congestion window chart"
+cwnd_title_str="${src} ${name} cwnd chart"
+srtt_title_str="${src} ${name} srtt chart"
 
 gnuplot -persist << EOF
+set encoding utf8
+set term pdfcairo color lw 1 dashlength 1 noenhanced font "DejaVu Sans Mono,16" dashed size 12in,9in background rgb "white"
+set output "${src}.cwnd_srtt.${flow_id}.pdf"
+set multiplot layout 2,1 title "Flow Analysis" offset 4.0,0.0
 
-set title "${title_str}" offset 0.0,-0.5
+# linecolor(lc), linetype(lt), linewidth(lw), dashtype(dt), pointtype(pt)
+set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval 1000
+
+# First plot cwnd
+set title "${cwnd_title_str}" offset 0.0,-0.5
 set xlabel "time (second)" offset 0.0,0.5
 set ylabel "cwnd (byte)" offset 0,0.0
 set xtics nomirror
 set ytics nomirror
 set tmargin 3		# Top margin
 set mxtics
-
 set xrange [0:${seconds}]
-set yrange [0:${ymax}]
+set yrange [0:${ymax_cwnd}]
 set autoscale fix
-
-# linecolor(lc), linetype(lt), linewidth(lw), dashtype(dt), pointtype(pt)
-set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval 100
-
 set key box opaque vertical right top reverse Left samplen 2 width 1 spacing 1.5
 set boxwidth 2 relative
-set term pdfcairo color lw 1 dashlength 1 enhanced font "DejaVu Sans Mono,16" dashed size 8in,6in background rgb "white"
-set output "${src}.cwnd_chart.${flow_id}.pdf"
 
-plot "${plot_file}" using 2:3 title "flow1" with linespoints ls 1
+plot "${plot_file}" using 2:3 title "flow1: ${cwnd_stats}" with linespoints ls 1
 
+# Second plot
+set title "${srtt_title_str}" offset 0.0,-0.5
+set xlabel "time (second)" offset 0.0,0.5
+set ylabel "srtt (microsecond)" offset 0,0
+set xtics nomirror
+set ytics nomirror
+set tmargin 3		# Top margin
+set mxtics
+set xrange [0:${seconds}]
+set yrange [0:${ymax_srtt}]
+set autoscale fix
+set key box opaque vertical right top reverse Left samplen 2 width 1 spacing 1.5
+set boxwidth 2 relative
+
+plot "${plot_file}" using 2:5 title "flow1: ${srtt_stats}" with linespoints ls 1
+
+unset multiplot
+unset output
 EOF
