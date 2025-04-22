@@ -28,13 +28,10 @@ echo "sport == ${tcp_port}" > /sys/kernel/debug/tracing/events/tcp/tcp_probe/fil
 echo 256000 > /sys/kernel/debug/tracing/buffer_size_kb
 echo > /sys/kernel/debug/tracing/trace
 echo 1 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
-# tcpdump -w ${tcpdump_name} -s 100 -i enp0s5 tcp port ${tcp_port} &
-# pid=$!
-sleep 1
+
 iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t 300 -i 1 -f m -VC ${name} > ${iperf_log_name}
 echo 0 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 cat /sys/kernel/debug/tracing/trace > ${dir}/${trace_name}
-# kill $pid
 
 ls -lh ${trace_name}
 
