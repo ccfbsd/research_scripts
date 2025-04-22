@@ -1,8 +1,7 @@
 #!/bin/bash
 
 if [  $# -ne 4 ]; then
-    echo -e "\nUsage:\n$0 <name> <src> <dst> <seconds>\n"
-    echo -e "example: bash $0 cubic s1 r1 10\n"
+    echo -e "\nUsage:\n$0 <name> <src> <dst> <seconds>\n example: bash $0 cubic s1 r1 10\n"
     exit 1
 fi
 
