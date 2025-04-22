@@ -92,7 +92,7 @@ plot_file=${src}.${flow_id}.txt
 ls -lh "${siftr2_log_abs_path}" | tee -a ${log_name}
 ls -lh "${plot_file}" | tee -a ${log_name}
 tar -zcf ${siftr_name}.tgz -C /var/log ${siftr_name}
-rm ${siftr2_log_abs_path}; rm ${tmp_name}
+rm ${siftr2_log_abs_path} ${tmp_name}
 
 echo "generating gnuplot figure..."
 
