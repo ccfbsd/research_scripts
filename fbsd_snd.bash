@@ -101,7 +101,7 @@ srtt_title_str="${src} ${name} srtt chart"
 
 gnuplot -persist << EOF
 set encoding utf8
-set term pdfcairo color lw 1 dashlength 1 enhanced font "DejaVu Sans Mono,16" dashed size 12in,9in background rgb "white"
+set term pdfcairo color lw 1 dashlength 1 noenhanced font "DejaVu Sans Mono,16" dashed size 12in,9in background rgb "white"
 set output "${src}.cwnd_srtt.${flow_id}.pdf"
 set multiplot layout 2,1 title "Flow Analysis" offset 4.0,0.0
 
