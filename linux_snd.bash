@@ -72,10 +72,10 @@ ymax_cwnd=$(echo "$max_cwnd * 1.25" | bc)
 ymax_srtt=$(echo "$max_srtt * 1.25" | bc)
 cwnd_stats="avg_cwnd: ${avg_cwnd}, min_cwnd: ${min_cwnd}, max_cwnd: ${max_cwnd} bytes"
 srtt_stats="avg_srtt: ${avg_srtt}, min_srtt: ${min_srtt}, max_srtt: ${max_srtt} µs"
-echo "[${max_cwnd}][${ymax_cwnd}]"
-echo "[${max_srtt}][${ymax_srtt}]"
-echo "[${cwnd_stats}]"
-echo "[${srtt_stats}]"
+#echo "[${max_cwnd}][${ymax_cwnd}]"
+#echo "[${max_srtt}][${ymax_srtt}]"
+#echo "[${cwnd_stats}]"
+#echo "[${srtt_stats}]"
 
 echo "generating gnuplot figure..."
 
