@@ -17,11 +17,11 @@ echo "generating gnuplot figure..."
 
 gnuplot -persist << EOF
 
-set title "Linux stack CUBIC throughput chart" offset 0.0,-0.5
+set title "Linux stack CUBIC throughput chart"
 set output "agg_throughput_chart.pdf"
 set term pdfcairo color lw 1 dashlength 1 enhanced font "DejaVu Sans Mono,16" dashed size 8in,6in background rgb "white"
-set xlabel "time (second)" offset 0.0,0.5
-set ylabel "throughput (Mbits/sec)" offset 0,0.0
+set xlabel "time (second)"
+set ylabel "throughput (Mbits/sec)"
 set xtics nomirror
 set ytics nomirror
 set tmargin 3		# Top margin

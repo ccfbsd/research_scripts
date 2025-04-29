@@ -109,9 +109,9 @@ set multiplot layout 2,1 title "Flow Analysis" offset 4.0,0.0
 set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval 1000
 
 # First plot cwnd
-set title "${cwnd_title_str}" offset 0.0,-0.5
-set xlabel "time (second)" offset 0.0,0.5
-set ylabel "cwnd (byte)" offset 0,0.0
+set title "${cwnd_title_str}"
+set xlabel "time (second)"
+set ylabel "cwnd (byte)"
 set xtics nomirror
 set ytics nomirror
 set tmargin 3		# Top margin
@@ -125,9 +125,9 @@ set boxwidth 2 relative
 plot "${plot_file}" using 2:3 title "flow1: ${cwnd_stats}" with linespoints ls 1
 
 # Second plot
-set title "${srtt_title_str}" offset 0.0,-0.5
-set xlabel "time (second)" offset 0.0,0.5
-set ylabel "srtt (microsecond)" offset 0,0
+set title "${srtt_title_str}"
+set xlabel "time (second)"
+set ylabel "srtt (microsecond)"
 set xtics nomirror
 set ytics nomirror
 set tmargin 3		# Top margin

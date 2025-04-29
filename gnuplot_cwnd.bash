@@ -10,11 +10,11 @@ fi
 echo "generating gnuplot figure..."
 gnuplot -persist << EOF
 
-set title "Linux stack CUBIC congestion window chart" offset 0.0,-0.5
+set title "Linux stack CUBIC congestion window chart"
 set output "cwnd_chart.pdf"
 set term pdfcairo color lw 1 dashlength 1 enhanced font "DejaVu Sans Mono,16" dashed size 8in,6in background rgb "white"
-set xlabel "time (second)" offset 0.0,0.5
-set ylabel "cwnd (byte)" offset 0,0.0
+set xlabel "time (second)"
+set ylabel "cwnd (byte)"
 set xtics nomirror
 set ytics nomirror
 set tmargin 3		# Top margin
