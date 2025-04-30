@@ -17,7 +17,7 @@ tcpdump_name=${src}.${name}.pcap
 iperf_log_name=${src}.iperf3_output.log
 snd_avg_goodput=${src}.avg.goodput
 tmp_name=${src}.tmp.log
-plot_file=${src}.plot.${name}.txt
+plot_file=${src}.plot.txt
 
 echo "sport == ${tcp_port}" > /sys/kernel/debug/tracing/events/tcp/tcp_probe/filter
 ## disable scheduler debugging and prevent interference in the tcp_probe log
