@@ -3,7 +3,7 @@
 # if not 2 arguments supplied, display usage
 if [  $# -ne 2 ]
 then
-	echo -e "requires 4 input arguments\nUsage: $0 n1fbsd.plot.txt n2fbsd.plot.txt\n"
+	echo -e "requires 2 input arguments\nUsage: $0 n1fbsd.plot.txt n2fbsd.plot.txt\n"
 	exit 1
 fi
 
