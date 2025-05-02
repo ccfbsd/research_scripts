@@ -70,8 +70,8 @@ END {
 
 ymax_cwnd=$(echo "$max_cwnd * 1.25" | bc)
 ymax_srtt=$(echo "$max_srtt * 1.25" | bc)
-cwnd_stats="avg_cwnd: ${avg_cwnd}, min_cwnd: ${min_cwnd}, max_cwnd: ${max_cwnd} bytes"
-srtt_stats="avg_srtt: ${avg_srtt}, min_srtt: ${min_srtt}, max_srtt: ${max_srtt} µs"
+cwnd_stats="avg\\\_cwnd: ${avg_cwnd}, min\\\_cwnd: ${min_cwnd}, max\\\_cwnd: ${max_cwnd} bytes"
+srtt_stats="avg\\\_srtt: ${avg_srtt}, min\\\_srtt: ${min_srtt}, max\\\_srtt: ${max_srtt} µs"
 #echo "[${max_cwnd}][${ymax_cwnd}]"
 #echo "[${max_srtt}][${ymax_srtt}]"
 #echo "[${cwnd_stats}]"
@@ -84,7 +84,7 @@ srtt_title_str="${src} ${name} srtt chart"
 
 gnuplot -persist << EOF
 set encoding utf8
-set term pdfcairo color lw 1 dashlength 1 noenhanced font "DejaVu Sans Mono,16" dashed size 12in,9in background rgb "white"
+set term pdfcairo color lw 1 dashlength 1 enhanced font "DejaVu Sans Mono,16" dashed size 12in,9in background rgb "white"
 set output "${src}.cwnd_srtt.pdf"
 set multiplot layout 2,1 title "Flow Analysis" offset 4.0,0.0
 
