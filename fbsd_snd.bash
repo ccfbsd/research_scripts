@@ -56,6 +56,7 @@ sysctl net.inet.siftr2.port_filter=${tcp_port} | tee -a ${log_name}
 sysctl net.inet.siftr2.cwnd_filter=1 | tee -a ${log_name}
 sysctl net.inet.siftr2.ppl=1 | tee -a ${log_name}
 sysctl net.inet.siftr2.logfile=/var/log/${siftr_name} | tee -a ${log_name}
+kldstat | tee -a ${log_name}
 netstat -sz > /dev/null 2>&1
 sysctl net.inet.siftr2.enabled=1 | tee -a ${log_name}
 
