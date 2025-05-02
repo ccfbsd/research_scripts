@@ -77,10 +77,10 @@ ${log_review_tool} -f "${siftr2_log_abs_path}" -p "${src}" -s "${flow_id}" >> "$
 
 cwnd_stats=$(grep "avg_cwnd:" "${log_name}" | awk '{$1=$1; print}')
 cwnd_stats="${cwnd_stats//_/\\\\\\_}"
-echo "[${cwnd_stats}]"
+#echo "[${cwnd_stats}]"
 srtt_stats=$(grep "avg_srtt:" "${log_name}" | awk '{$1=$1; print}')
 srtt_stats="${srtt_stats//_/\\\\\\_}"
-echo "[${srtt_stats}]"
+#echo "[${srtt_stats}]"
 
 max_cwnd=$(grep "max_cwnd" "${log_name}" | awk '{printf "%d\n", $6}')
 ymax_cwnd=$(echo "$max_cwnd * 1.25" | bc)
