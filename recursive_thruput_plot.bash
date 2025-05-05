@@ -17,8 +17,6 @@ generate_thruput_plot_if_leaf() {
         local src1 src2
         src1=$(basename "${test_logs[0]}" | cut -d. -f1)
         src2=$(basename "${test_logs[1]}" | cut -d. -f1)
-        echo "First prefix: $src1"
-        echo "Second prefix: $src2"
         
         local flow1_summary=$(grep "<->" "${test_logs[0]}" | awk '{$1=$1; print}')
         local flow1_stack=$(echo "${flow1_summary}" | awk '{printf "%s\n", $3}' | cut -d: -f2)
@@ -41,7 +39,6 @@ generate_thruput_plot_if_leaf() {
         if grep -q "dirty" "${iperf3_logs[0]}" && grep -q "dirty" "${iperf3_logs[1]}"; then
             ver_str="after patch:"
         fi
-        echo "${ver_str}"
 
         local output="${dir}/all_throughput_chart.pdf"
         local n1_mbps="${dir}/${src1}.mbps_timeline.txt"
