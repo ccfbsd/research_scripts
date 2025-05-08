@@ -47,7 +47,7 @@ snd_avg_goodput=${dir}/${src}.avg.goodput
 tmp_name=${dir}/${src}.tmp.log
 
 uname -v | tee ${log_name}
-sysctl net.inet.tcp.functions_default | tee ${log_name}
+sysctl net.inet.tcp.functions_default | tee -a ${log_name}
 # Don't cache ssthresh from previous connection
 sysctl net.inet.tcp.hostcache.enable=0 | tee -a ${log_name}
 # force to close the control socket after 4 seconds
