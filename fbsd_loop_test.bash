@@ -31,3 +31,5 @@ for i in {1..3}; do
     cd ..
     echo ""
 done
+
+kldunload siftr2
