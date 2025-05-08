@@ -46,6 +46,7 @@ throughput_timeline=${dir}/${src}.mbps_timeline.txt
 snd_avg_goodput=${dir}/${src}.avg.goodput
 tmp_name=${dir}/${src}.tmp.log
 
+uname -v | tee ${log_name}
 sysctl net.inet.tcp.functions_default | tee ${log_name}
 # Don't cache ssthresh from previous connection
 sysctl net.inet.tcp.hostcache.enable=0 | tee -a ${log_name}
