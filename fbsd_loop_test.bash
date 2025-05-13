@@ -30,7 +30,7 @@ fi
 
 script=/root/research_scripts/fbsd_snd_nosiftr.bash
 
-for i in {1..3}; do
+for i in {1..4}; do
     folder="${name}.$i"
     mkdir -p "${folder}"
     cd "${folder}" || exit 1
@@ -39,7 +39,8 @@ for i in {1..3}; do
     bash ${script} ${name} ${src} ${dst} ${seconds}
 
     cd ..
-    echo "" && sleep 10
+    echo ""
+    sleep 10
 done
 
 script=/root/research_scripts/fbsd_snd.bash
