@@ -28,7 +28,7 @@ echo 1 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 
 iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 -f m -VC ${name} > ${iperf_log_name}
 echo 0 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
-cat /sys/kernel/debug/tracing/trace > ${dir}/${trace_name}
+rg "iperf3" /sys/kernel/debug/tracing/trace > ${dir}/${trace_name}
 
 ls -lh ${trace_name}
 
