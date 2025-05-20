@@ -47,12 +47,13 @@ snd_avg_goodput=${dir}/${src}.avg.goodput
 tmp_name=${dir}/${src}.tmp.log
 
 bblog_folder=${src}.${name}.tcplog_dumps
-if [ ! -d "${bblog_folder}" ]; then
-    mkdir -p "${bblog_folder}"
-    chown nobody "${bblog_folder}"
-    echo "Created folder: ${bblog_folder}"
+bblog_folder_real_path=/var/log/${bblog_folder}
+if [ ! -d "${bblog_folder_real_path}" ]; then
+    mkdir -p "${bblog_folder_real_path}"
+    chown nobody "${bblog_folder_real_path}"
+    echo "Created folder: ${bblog_folder_real_path}"
 else
-    echo "Folder already exists: ${bblog_folder}"
+    echo "Folder already exists: ${bblog_folder_real_path}"
 fi
 
 uname -v | tee ${log_name}
@@ -73,7 +74,7 @@ sysctl net.inet.tcp.bb.log_auto_all=1 | tee -a ${log_name}
 kldstat | tee -a ${log_name}
 netstat -sz > /dev/null 2>&1
 sysctl net.inet.siftr2.enabled=1 | tee -a ${log_name}
-tcplog_dumper -d -D ${bblog_folder}
+tcplog_dumper -d -D ${bblog_folder_real_path}
 
 iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 -f m -VC ${name} > ${iperf_log_name}
 sysctl net.inet.siftr2.enabled=0 | tee -a ${log_name}
@@ -89,9 +90,9 @@ awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}' 
 sed '1d' ${tmp_name} | sed '$d' | sed '$d' > ${throughput_timeline}
 
 # Run the binary and extract the flow_id value
-siftr2_log_abs_path=$(realpath /var/log/${siftr_name})
-flow_id=$(${log_review_tool} -f "${siftr2_log_abs_path}" | awk -F'id:' '{print $2}' | awk '{print $1}' | tr -d '\r\n')
-${log_review_tool} -f "${siftr2_log_abs_path}" -p "${src}" -s "${flow_id}" >> "${log_name}" 2>&1
+siftr2_log_real_path=/var/log/${siftr_name}
+flow_id=$(${log_review_tool} -f "${siftr2_log_real_path}" | awk -F'id:' '{print $2}' | awk '{print $1}' | tr -d '\r\n')
+${log_review_tool} -f "${siftr2_log_real_path}" -p "${src}" -s "${flow_id}" >> "${log_name}" 2>&1
 
 cwnd_stats=$(grep "avg_cwnd:" "${log_name}" | awk '{$1=$1; print}')
 cwnd_stats="${cwnd_stats//_/\\\\\\_}"
@@ -109,9 +110,12 @@ ymax_srtt=$(echo "$max_srtt * 1.25" | bc)
 
 plot_file=${src}.${flow_id}.txt
 
+du -hd0 "${siftr2_log_real_path}" | tee -a ${log_name}
+du -hd0 "${plot_file}" | tee -a ${log_name}
+du -hd0 "${bblog_folder_real_path}" | tee -a ${log_name}
 tar -zcf ${siftr_name}.tgz -C /var/log ${siftr_name}
-tar -zcf ${bblog_folder}.tgz ${bblog_folder}
-rm -r ${siftr2_log_abs_path} ${tmp_name} ${bblog_folder}
+tar -zcf ${bblog_folder}.tgz -C /var/log ${bblog_folder}
+rm -r ${siftr2_log_real_path} ${tmp_name} ${bblog_folder_real_path}
 
 echo "generating gnuplot figure..."
 
