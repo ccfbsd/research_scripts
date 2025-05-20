@@ -46,6 +46,15 @@ throughput_timeline=${dir}/${src}.mbps_timeline.txt
 snd_avg_goodput=${dir}/${src}.avg.goodput
 tmp_name=${dir}/${src}.tmp.log
 
+bblog_folder=${src}.${name}.tcplog_dumps
+if [ ! -d "${bblog_folder}" ]; then
+    mkdir -p "${bblog_folder}"
+    chown nobody "${bblog_folder}"
+    echo "Created folder: ${bblog_folder}"
+else
+    echo "Folder already exists: ${bblog_folder}"
+fi
+
 uname -v | tee ${log_name}
 sysctl net.inet.tcp.functions_default | tee -a ${log_name}
 # Don't cache ssthresh from previous connection
@@ -57,12 +66,19 @@ sysctl net.inet.siftr2.port_filter=${tcp_port} | tee -a ${log_name}
 sysctl net.inet.siftr2.cwnd_filter=1 | tee -a ${log_name}
 sysctl net.inet.siftr2.ppl=1 | tee -a ${log_name}
 sysctl net.inet.siftr2.logfile=/var/log/${siftr_name} | tee -a ${log_name}
+sysctl net.inet.tcp.bb.log_auto_ratio=1 | tee -a ${log_name}
+sysctl net.inet.tcp.bb.log_verbose=1 | tee -a ${log_name}
+sysctl net.inet.tcp.bb.log_auto_mode=4 | tee -a ${log_name}
+sysctl net.inet.tcp.bb.log_auto_all=1 | tee -a ${log_name}
 kldstat | tee -a ${log_name}
 netstat -sz > /dev/null 2>&1
 sysctl net.inet.siftr2.enabled=1 | tee -a ${log_name}
+tcplog_dumper -d -D ${bblog_folder}
 
 iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 -f m -VC ${name} > ${iperf_log_name}
 sysctl net.inet.siftr2.enabled=0 | tee -a ${log_name}
+sysctl net.inet.tcp.bb.log_auto_all=0 | tee -a ${log_name}
+pkill -f tcplog_dumper
 netstat -sp tcp > ${netstat_file_name}
 
 sleep 1
@@ -93,10 +109,9 @@ ymax_srtt=$(echo "$max_srtt * 1.25" | bc)
 
 plot_file=${src}.${flow_id}.txt
 
-ls -lh "${siftr2_log_abs_path}" | tee -a ${log_name}
-ls -lh "${plot_file}" | tee -a ${log_name}
 tar -zcf ${siftr_name}.tgz -C /var/log ${siftr_name}
-rm ${siftr2_log_abs_path} ${tmp_name}
+tar -zcf ${bblog_folder}.tgz ${bblog_folder}
+rm -r ${siftr2_log_abs_path} ${tmp_name} ${bblog_folder}
 
 echo "generating gnuplot figure..."
 
