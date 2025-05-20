@@ -54,6 +54,7 @@ if [ ! -d "${bblog_folder_real_path}" ]; then
     echo "Created folder: ${bblog_folder_real_path}"
 else
     echo "Folder already exists: ${bblog_folder_real_path}"
+    rm -rf "${bblog_folder_real_path}/*"
 fi
 
 uname -v | tee ${log_name}
@@ -113,8 +114,10 @@ plot_file=${src}.${flow_id}.txt
 du -hd0 "${siftr2_log_real_path}" | tee -a ${log_name}
 du -hd0 "${plot_file}" | tee -a ${log_name}
 du -hd0 "${bblog_folder_real_path}" | tee -a ${log_name}
+cd /tmp
 tar -zcf ${siftr_name}.tgz -C /var/log ${siftr_name}
 tar -zcf ${bblog_folder}.tgz -C /var/log ${bblog_folder}
+mv ${siftr_name}.tgz ${bblog_folder}.tgz ${dir}
 rm -r ${siftr2_log_real_path} ${tmp_name} ${bblog_folder_real_path}
 
 echo "generating gnuplot figure..."
