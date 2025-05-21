@@ -38,16 +38,17 @@ fi
 
 dir=$(pwd)
 tcp_port=54321
-log_name=${dir}/${src}.test.log
-siftr_name=${src}.${name}.siftr2
-netstat_file_name=${dir}/${src}.${name}.netstat
-iperf_log_name=${dir}/${src}.iperf3_output.log
-throughput_timeline=${dir}/${src}.mbps_timeline.txt
-snd_avg_goodput=${dir}/${src}.avg.goodput
-tmp_name=${dir}/${src}.tmp.log
+log_name="${dir}/${src}.test.log"
+siftr_name="${src}.${name}.siftr2"
+siftr2_log_real_path="${dir}/${siftr_name}"
+netstat_file_name="${dir}/${src}.${name}.netstat"
+iperf_log_name="${dir}/${src}.iperf3_output.log"
+throughput_timeline="${dir}/${src}.mbps_timeline.txt"
+snd_avg_goodput="${dir}/${src}.avg.goodput"
+tmp_name="${dir}/${src}.tmp.log"
 
-bblog_folder=${src}.${name}.tcplog_dumps
-bblog_folder_real_path=/var/log/${bblog_folder}
+bblog_folder="${src}.${name}.tcplog_dumps"
+bblog_folder_real_path="${dir}/${bblog_folder}"
 if [ ! -d "${bblog_folder_real_path}" ]; then
     mkdir -p "${bblog_folder_real_path}"
     chown nobody "${bblog_folder_real_path}"
@@ -67,7 +68,7 @@ sysctl net.inet.tcp.cc.algorithm=${name} | tee -a ${log_name}
 sysctl net.inet.siftr2.port_filter=${tcp_port} | tee -a ${log_name}
 sysctl net.inet.siftr2.cwnd_filter=1 | tee -a ${log_name}
 sysctl net.inet.siftr2.ppl=1 | tee -a ${log_name}
-sysctl net.inet.siftr2.logfile=/var/log/${siftr_name} | tee -a ${log_name}
+sysctl net.inet.siftr2.logfile=${siftr2_log_real_path} | tee -a ${log_name}
 sysctl net.inet.tcp.bb.log_auto_ratio=1 | tee -a ${log_name}
 sysctl net.inet.tcp.bb.log_verbose=1 | tee -a ${log_name}
 sysctl net.inet.tcp.bb.log_auto_mode=4 | tee -a ${log_name}
@@ -91,7 +92,7 @@ awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}' 
 sed '1d' ${tmp_name} | sed '$d' | sed '$d' > ${throughput_timeline}
 
 # Run the binary and extract the flow_id value
-siftr2_log_real_path=/var/log/${siftr_name}
+
 flow_id=$(${log_review_tool} -f "${siftr2_log_real_path}" | awk -F'id:' '{print $2}' | awk '{print $1}' | tr -d '\r\n')
 ${log_review_tool} -f "${siftr2_log_real_path}" -p "${src}" -s "${flow_id}" >> "${log_name}" 2>&1
 
@@ -114,10 +115,8 @@ plot_file=${src}.${flow_id}.txt
 du -hd0 "${siftr2_log_real_path}" | tee -a ${log_name}
 du -hd0 "${plot_file}" | tee -a ${log_name}
 du -hd0 "${bblog_folder_real_path}" | tee -a ${log_name}
-cd /tmp
-tar -zcf ${siftr_name}.tgz -C /var/log ${siftr_name}
-tar -zcf ${bblog_folder}.tgz -C /var/log ${bblog_folder}
-mv ${siftr_name}.tgz ${bblog_folder}.tgz ${dir}
+tar -zcf ${siftr_name}.tgz -C ${dir} ${siftr_name}
+tar -zcf ${bblog_folder}.tgz -C ${dir} ${bblog_folder}
 rm -r ${siftr2_log_real_path} ${tmp_name} ${bblog_folder_real_path}
 
 echo "generating gnuplot figure..."
