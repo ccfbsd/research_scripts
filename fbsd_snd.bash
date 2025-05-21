@@ -70,6 +70,7 @@ sysctl net.inet.siftr2.cwnd_filter=1 | tee -a ${log_name}
 sysctl net.inet.siftr2.ppl=1 | tee -a ${log_name}
 sysctl net.inet.siftr2.logfile=${siftr2_log_real_path} | tee -a ${log_name}
 sysctl net.inet.tcp.bb.log_auto_ratio=1 | tee -a ${log_name}
+sysctl net.inet.tcp.bb.log_session_limit=500000 | tee -a ${log_name}
 sysctl net.inet.tcp.bb.log_verbose=1 | tee -a ${log_name}
 sysctl net.inet.tcp.bb.log_auto_mode=4 | tee -a ${log_name}
 sysctl net.inet.tcp.bb.log_auto_all=1 | tee -a ${log_name}
