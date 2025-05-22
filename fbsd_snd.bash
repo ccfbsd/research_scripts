@@ -55,7 +55,7 @@ if [ ! -d "${bblog_folder_real_path}" ]; then
     echo "Created folder: ${bblog_folder_real_path}"
 else
     echo "Folder already exists: ${bblog_folder_real_path}"
-    rm -rf "${bblog_folder_real_path}/*"
+    rm -rf "${bblog_folder_real_path}"/*
 fi
 
 uname -v | tee ${log_name}
