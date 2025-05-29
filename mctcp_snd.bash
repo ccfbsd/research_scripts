@@ -15,6 +15,7 @@ start_time=$(date +%s.%N)
 dir=$(pwd)
 iperf_server_port=5001
 iperf3_server_port=5201
+log_name="${dir}/${src}.test.log"
 trace_name="${dir}/${src}.${name}.trace"
 tcpdump_name="${dir}/${src}.${name}.pcap"
 iperf_log_name="${dir}/${src}.iperf_output.log"
@@ -24,6 +25,12 @@ tmp_name="${dir}/${src}.tmp.log"
 plot_file="${dir}/${src}.plot.txt"
 per_socket_trace_dir="${dir}/traces_by_cookie"
 subflows_plot_dir="${dir}/subflows_plot_files"
+
+uname -rv | tee ${log_name}
+sysctl net.mptcp | tee -a ${log_name}
+sysctl net.ipv4.tcp_congestion_control=${name} | tee -a ${log_name}
+num_subflows=$(cat /sys/module/mptcp_ndiffports/parameters/num_subflows | tr -d '\r\n')
+echo "/sys/module/mptcp_ndiffports/parameters/num_subflows = ${num_subflows}" | tee -a ${log_name}
 
 if [ ! -d "${per_socket_trace_dir}" ]; then
     mkdir -p "${per_socket_trace_dir}"
@@ -89,7 +96,6 @@ for tracefile in "${per_socket_trace_dir}"/subflow_*.log; do
     generate_plot_file_per_trace_file $(realpath ${tracefile})
 done
 
-num_subflows=$(cat /sys/module/mptcp_ndiffports/parameters/num_subflows | tr -d '\r\n')
 subflow_files=(${per_socket_trace_dir}/subflow_*.log)
 num_subflow_files=${#subflow_files[@]}
 #for trace_file in "${subflow_files[@]}"; do
