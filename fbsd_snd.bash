@@ -47,17 +47,6 @@ throughput_timeline="${dir}/${src}.mbps_timeline.txt"
 snd_avg_goodput="${dir}/${src}.avg.goodput"
 tmp_name="${dir}/${src}.tmp.log"
 
-bblog_folder="${src}.${name}.tcplog_dumps"
-bblog_folder_real_path="${dir}/${bblog_folder}"
-if [ ! -d "${bblog_folder_real_path}" ]; then
-    mkdir -p "${bblog_folder_real_path}"
-    chown nobody "${bblog_folder_real_path}"
-    echo "Created folder: ${bblog_folder_real_path}"
-else
-    echo "Folder already exists: ${bblog_folder_real_path}"
-    rm -rf "${bblog_folder_real_path}"/*
-fi
-
 uname -v | tee ${log_name}
 sysctl net.inet.tcp.functions_default | tee -a ${log_name}
 # Don't cache ssthresh from previous connection
@@ -69,25 +58,19 @@ sysctl net.inet.siftr2.port_filter=${tcp_port} | tee -a ${log_name}
 sysctl net.inet.siftr2.cwnd_filter=1 | tee -a ${log_name}
 sysctl net.inet.siftr2.ppl=1 | tee -a ${log_name}
 sysctl net.inet.siftr2.logfile=${siftr2_log_real_path} | tee -a ${log_name}
-sysctl net.inet.tcp.bb.log_auto_ratio=1 | tee -a ${log_name}
-sysctl net.inet.tcp.bb.log_session_limit=100000 | tee -a ${log_name}
-sysctl net.inet.tcp.bb.log_verbose=1 | tee -a ${log_name}
-sysctl net.inet.tcp.bb.log_auto_mode=4 | tee -a ${log_name}
-sysctl net.inet.tcp.bb.log_auto_all=1 | tee -a ${log_name}
 kldstat | tee -a ${log_name}
 netstat -sz > /dev/null 2>&1
 sysctl net.inet.siftr2.enabled=1 | tee -a ${log_name}
-tcplog_dumper -d -D ${bblog_folder_real_path}
 
 iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 -f m -VC ${name} > ${iperf_log_name}
 sysctl net.inet.siftr2.enabled=0 | tee -a ${log_name}
-sysctl net.inet.tcp.bb.log_auto_all=0 | tee -a ${log_name}
-pkill -f tcplog_dumper
 netstat -sp tcp > ${netstat_file_name}
 
 sleep 1
 
 grep -E -A 2 "Summary Results" ${iperf_log_name} | grep "sender" | awk '{printf "%.2f\n", $7}' > ${snd_avg_goodput}
+avg_goodput=$(cat "${snd_avg_goodput}" | tr -d '\r\n')
+echo "sender average throughput: [${avg_goodput}]"
 
 awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}' ${iperf_log_name} > ${tmp_name}
 sed '1d' ${tmp_name} | sed '$d' | sed '$d' > ${throughput_timeline}
@@ -115,10 +98,8 @@ plot_file=${src}.${flow_id}.txt
 
 du -hd0 "${siftr2_log_real_path}" | tee -a ${log_name}
 du -hd0 "${plot_file}" | tee -a ${log_name}
-du -hd0 "${bblog_folder_real_path}" | tee -a ${log_name}
 tar -zcf ${siftr_name}.tgz -C ${dir} ${siftr_name}
-tar -zcf ${bblog_folder}.tgz -C ${dir} ${bblog_folder}
-rm -r ${siftr2_log_real_path} ${tmp_name} ${bblog_folder_real_path}
+rm -r ${siftr2_log_real_path} ${tmp_name}
 
 echo "generating gnuplot figure..."
 
