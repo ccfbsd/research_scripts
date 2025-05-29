@@ -38,7 +38,6 @@ extract_goodput_info() {
         f2_avg_thruput=$(printf "%g\n" $(<"${thruput_logs[1]}"))
         sum=$(echo "${f1_avg_thruput} + ${f2_avg_thruput}" | bc)
         local fairness_pct=$(tcp_fairness ${f1_avg_thruput} ${f2_avg_thruput})
-        echo "Fairness: [${fairness_pct}%]"
         
         # Append to CSV
         printf "%s,%s,%s,%s,%s,%s\n" \
@@ -60,10 +59,10 @@ csv_file="$(pwd)/output.csv"
 echo "version,TCP CC,flow1 avg thruput,flow2 avg thruput,sum(flow1 + flow2),TCP fairness" \
      > "${csv_file}"
 
-sorted_csv_file="$(pwd)/sorted_output.csv"
+sorted_csv_file="$(pwd)/$(basename $(pwd))_sorted_output.csv"
 
 # Create a stats table in MoinMoin wiki format
-wiki_table_file="$(pwd)/wiki_table.txt"
+wiki_table_file="$(pwd)/$(basename $(pwd))_wiki_table.txt"
 echo "|| version || TCP CC || flow1 avg thruput || flow2 avg thruput|| link utilization = sum(flow1+flow2) || TCP fairness ||" \
      > "${wiki_table_file}"
 
