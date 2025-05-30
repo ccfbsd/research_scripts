@@ -28,8 +28,7 @@ else
     echo "Module $SIFTR2_NAME is already loaded."
 fi
 
-interval=$(( seconds + 30 ))
-
+interval=$(echo "${seconds} * 1.1" | bc | awk '{printf "%d\n", $1}')
 start_time=$(date +%s)
 next_time=$(( start_time + interval ))
 echo "start_time: [$start_time], interval: [$interval]"
@@ -42,9 +41,10 @@ for i in {1..5}; do
 
     echo "[$(date +%s)] Running ${script} in $folder..."
     bash ${script} ${name} ${src} ${dst} ${seconds}
-    echo "script running finished at: [$(date +%s)]"
+    finish_time=$(date +%s)
+    echo "script running finished at: [${finish_time}]"
     cd ..
-    echo -e "next run is scheduled at: [${next_time}]\n"
+    echo -e "next run is scheduled at: [${next_time}], delta: [$(( next_time - finish_time ))]\n"
 
     while true; do
         now=$(date +%s)
