@@ -28,7 +28,7 @@ uname -rv | tee ${log_name}
 sysctl net.ipv4.tcp_congestion_control=${name} | tee -a ${log_name}
 
 echo "dport == ${iperf_svr_port}" > /sys/kernel/debug/tracing/events/tcp/tcp_probe/filter
-echo 256000 > /sys/kernel/debug/tracing/buffer_size_kb
+echo 800000 > /sys/kernel/debug/tracing/buffer_size_kb
 echo > /sys/kernel/debug/tracing/trace
 echo 1 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 
@@ -36,6 +36,10 @@ echo 1 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 iperf -B ${src} -c ${dst} -t ${seconds} -i 1 -f m -eZ ${name} > ${iperf_log_name}
 echo 0 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 cat /sys/kernel/debug/tracing/trace > ${trace_name}
+echo > /sys/kernel/debug/tracing/trace
+
+## remove error message that does not match format
+sed -i '/rs:main/d' ${trace_name}
 
 du -h ${trace_name}
 
@@ -57,7 +61,7 @@ awk 'NR==1 {start=$1} {printf "%.6f\t%s\t%d\t%s\n", $1 - start, $2, $2 * 1448, $
     ${tmp_name} > ${plot_file}
 
 tar zcf ${trace_name}.tgz ${trace_name}
-rm ${tmp_name} ${trace_name}
+tar zcf ${plot_file}.tgz ${plot_file}
 
 read min_cwnd avg_cwnd max_cwnd min_srtt avg_srtt max_srtt <<< $(awk '
 NR > 1 {
@@ -120,6 +124,8 @@ plot "${plot_file}" using 1:4 title "flow1: ${srtt_stats}" with linespoints ls 1
 unset multiplot
 unset output
 EOF
+
+rm ${tmp_name} ${trace_name} ${plot_file}
 
 end_time=$(date +%s.%N)
 elapsed=$(echo "$end_time - $start_time" | bc)
