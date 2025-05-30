@@ -21,7 +21,6 @@ tcpdump_name="${dir}/${src}.${name}.pcap"
 iperf_log_name="${dir}/${src}.iperf_output.log"
 snd_avg_goodput="${dir}/${src}.avg.goodput"
 throughput_timeline="${dir}/${src}.mbps_timeline.txt"
-tmp_name="${dir}/${src}.tmp.log"
 plot_file="${dir}/${src}.plot.txt"
 per_socket_trace_dir="${dir}/traces_by_cookie"
 subflows_plot_dir="${dir}/subflows_plot_files"
@@ -54,12 +53,17 @@ echo 1 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 iperf -B ${src} -c ${dst} -l 1M -t ${seconds} -i 1 -f m -eZ ${name} > ${iperf_log_name}
 
 echo 0 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
-rg "iperf" /sys/kernel/debug/tracing/trace > ${trace_name}
+cat /sys/kernel/debug/tracing/trace > ${trace_name}
+echo > /sys/kernel/debug/tracing/trace
 
-ls -lh ${trace_name}
+## remove error message that does not match format
+sed -i '/rs:main/d' ${trace_name}
 
-awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}' ${iperf_log_name} | sed '$d' > ${throughput_timeline}
-tail -n 1 ${iperf_log_name} | awk '{printf "%.2f\n", $7}' > ${snd_avg_goodput}
+du -h ${trace_name}
+
+awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}'\
+    ${iperf_log_name} | sed '$d' > ${throughput_timeline}
+tail -n 1 ${iperf_log_name} | awk '{printf "%.1f\n", $7}' > ${snd_avg_goodput}
 
 # Extract lines with tcp_probe and sort into files by sock_cookie
 grep 'sock_cookie=' "${trace_name}" | while read -r line; do
@@ -156,11 +160,11 @@ echo "generating gnuplot figure..."
     echo "set ytics nomirror"
     echo "set tmargin 3"
     echo "set mxtics"
-    echo "set xrange [0:${seconds}]"
-    echo "set xlabel 'time (second)'"
     echo "set autoscale fix"
     echo "set key box opaque vertical right top reverse Left samplen 2 width 1 spacing 1.5"
     echo "set boxwidth 2 relative"
+    echo "set xlabel 'time (second)'"
+    echo "set xrange [0:${seconds}]"
 
     # First plot cwnd
     echo "set title '${cwnd_title_str}'"
