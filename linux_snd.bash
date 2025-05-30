@@ -30,7 +30,7 @@ iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 
 echo 0 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 rg "iperf3" /sys/kernel/debug/tracing/trace > ${dir}/${trace_name}
 
-ls -lh ${trace_name}
+du -h ${trace_name}
 
 ## gsub(":", "", $4): Removes the colon from the timestamp ($4).
 ## gsub("snd_cwnd=", "", $13): Removes "snd_cwnd=" from the congestion window field ($13).
