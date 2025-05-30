@@ -10,13 +10,13 @@ src=$2
 dst=$3
 seconds=$4
 
-interval=$(echo "${seconds} * 1.1" | bc | awk '{printf "%d\n", $1}')
+interval=$(echo "${seconds} * 1.6" | bc | awk '{printf "%d\n", $1}')
 start_time=$(date +%s)
 next_time=$(( start_time + interval ))
 echo "start_time: [$start_time], interval: [$interval]"
 
 script=/root/research_scripts/linux_snd.bash
-for i in {1..5}; do
+for i in {1..3}; do
     folder="${name}.trace.$i"
     mkdir -p "${folder}"
     cd "${folder}" || exit 1
