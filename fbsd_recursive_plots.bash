@@ -7,14 +7,14 @@ generate_thruput_plot_if_leaf() {
 
     # Check if the directory has no subdirectories
     if ! find "${dir}" -mindepth 1 -maxdepth 1 -type d | grep -q .; then
-        local iperf3_logs=(${dir}/*.iperf3_output.log)
+        local iperf_logs=(${dir}/*.iperf_output.log)
         local ver_str="before patch:"
-        # Check if exactly two matching iperf3 logs exist
-        if [ ${#iperf3_logs[@]} -ne 2 ] || [ ! -e "${iperf3_logs[0]}" ] || [ ! -e "${iperf3_logs[1]}" ]; then
-            echo "Skipping ${dir}: required iperf3 logs not found"
+        # Check if exactly two matching iperf logs exist
+        if [ ${#iperf_logs[@]} -ne 2 ] || [ ! -e "${iperf_logs[0]}" ] || [ ! -e "${iperf_logs[1]}" ]; then
+            echo "Skipping ${dir}: required iperf logs not found"
             return
         fi
-        if grep -q "dirty" "${iperf3_logs[0]}" && grep -q "dirty" "${iperf3_logs[1]}"; then
+        if grep -q "dirty" "${iperf_logs[0]}" && grep -q "dirty" "${iperf_logs[1]}"; then
             ver_str="after patch:"
         fi
 
@@ -30,9 +30,9 @@ generate_thruput_plot_if_leaf() {
         src2=$(basename "${test_logs[1]}" | cut -d. -f1)
         
         local flow1_stack=$(grep "functions_default" "${test_logs[0]}" | awk '{printf "%s\n", $2}')
-        local flow1_cc=$(grep "snd_tcp_congestion" "${iperf3_logs[0]}" | awk '{printf "%s\n", $2}')
+        local flow1_cc=$(grep "snd_tcp_congestion" "${iperf_logs[0]}" | awk '{printf "%s\n", $2}')
         local flow2_stack=$(grep "functions_default" "${test_logs[1]}" | awk '{printf "%s\n", $2}')
-        local flow2_cc=$(grep "snd_tcp_congestion" "${iperf3_logs[1]}" | awk '{printf "%s\n", $2}')
+        local flow2_cc=$(grep "snd_tcp_congestion" "${iperf_logs[1]}" | awk '{printf "%s\n", $2}')
         [ "${flow1_stack}" = "${flow2_stack}" ] || { echo "Assertion failed: ${flow1_stack} != ${flow2_stack}"; exit 1; }
         [ "${flow1_cc}" = "${flow2_cc}" ] || { echo "Assertion failed: ${flow1_cc} != ${flow2_cc}"; exit 1; }
         local cc_algo=$(echo "$flow1_cc" | tr 'A-Z' 'a-z')      ## lower case
@@ -94,14 +94,14 @@ generate_cwnd_plot_if_leaf() {
 
     # Check if the directory has no subdirectories
     if ! find "${dir}" -mindepth 1 -maxdepth 1 -type d | grep -q .; then
-        local iperf3_logs=(${dir}/*.iperf3_output.log)
+        local iperf_logs=(${dir}/*.iperf_output.log)
         local ver_str="before patch:"
-        # Check if exactly two matching iperf3 logs exist
-        if [ ${#iperf3_logs[@]} -ne 2 ] || [ ! -e "${iperf3_logs[0]}" ] || [ ! -e "${iperf3_logs[1]}" ]; then
-            echo "Skipping ${dir}: required iperf3 logs not found"
+        # Check if exactly two matching iperf logs exist
+        if [ ${#iperf_logs[@]} -ne 2 ] || [ ! -e "${iperf_logs[0]}" ] || [ ! -e "${iperf_logs[1]}" ]; then
+            echo "Skipping ${dir}: required iperf logs not found"
             return
         fi
-        if grep -q "dirty" "${iperf3_logs[0]}" && grep -q "dirty" "${iperf3_logs[1]}"; then
+        if grep -q "dirty" "${iperf_logs[0]}" && grep -q "dirty" "${iperf_logs[1]}"; then
             ver_str="after patch:"
         fi
 
