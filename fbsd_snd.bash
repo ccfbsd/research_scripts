@@ -98,8 +98,8 @@ rm -r ${siftr2_log_real_path}
 
 echo "generating gnuplot figure..."
 
-cwnd_title_str="${src} ${name} cwnd chart"
-srtt_title_str="${src} ${name} srtt chart"
+cwnd_title_str="sender '${src}' ${name} cwnd chart"
+srtt_title_str="sender '${src}' ${name} srtt chart"
 pt_interval=$((seconds * 100))
 
 gnuplot -persist << EOF
@@ -125,13 +125,13 @@ set xrange [0:${seconds}]
 set title "${cwnd_title_str}"
 set ylabel "cwnd (byte)"
 set yrange [0:${ymax_cwnd}]
-plot "${plot_file}" using 2:3 title "flow1: ${cwnd_stats}" with linespoints ls 1
+plot "${plot_file}" using 2:3 title "'${src}' flow: ${cwnd_stats}" with linespoints ls 1
 
 # Second plot
 set title "${srtt_title_str}"
 set ylabel "srtt (microsecond)"
 set yrange [0:${ymax_srtt}]
-plot "${plot_file}" using 2:5 title "flow1: ${srtt_stats}" with linespoints ls 1
+plot "${plot_file}" using 2:5 title "'${src}' flow: ${srtt_stats}" with linespoints ls 1
 
 unset multiplot
 unset output
