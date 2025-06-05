@@ -12,12 +12,11 @@ seconds=$4
 
 dir=$(pwd)
 tcp_port=54321
-log_name=${dir}/${src}.test.log
-netstat_file_name=${dir}/${src}.${name}.netstat
-iperf_log_name=${dir}/${src}.iperf3_output.log
-throughput_timeline=${dir}/${src}.mbps_timeline.txt
-snd_avg_goodput=${dir}/${src}.avg.goodput
-tmp_name=${dir}/${src}.tmp.log
+log_name="${src}.test.log"
+netstat_file_name="${src}.${name}.netstat"
+iperf_log_name="${src}.iperf_output.log"
+throughput_timeline="${src}.mbps_timeline.txt"
+snd_avg_goodput="${src}.avg.goodput"
 
 uname -v | tee ${log_name}
 sysctl net.inet.tcp.functions_default | tee -a ${log_name}
@@ -29,11 +28,12 @@ sysctl net.inet.tcp.cc.algorithm=${name} | tee -a ${log_name}
 kldstat | tee -a ${log_name}
 netstat -sz > /dev/null 2>&1
 
-iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 -f m -VC ${name} > ${iperf_log_name}
+#iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 -f m -VC ${name} > ${iperf_log_name}
+iperf -B ${src} -c ${dst} -t ${seconds} -i 1 -f m -Z ${name} > ${iperf_log_name}
 netstat -sp tcp > ${netstat_file_name}
 
 grep -E -A 2 "Summary Results" ${iperf_log_name} | grep "sender" | awk '{printf "%.2f\n", $7}' > ${snd_avg_goodput}
 
-awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}' ${iperf_log_name} > ${tmp_name}
-sed '1d' ${tmp_name} | sed '$d' | sed '$d' > ${throughput_timeline}
-rm ${tmp_name}
+awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}'\
+    ${iperf_log_name} | sed '$d' > ${throughput_timeline}
+tail -n 1 ${iperf_log_name} | awk '{printf "%.1f\n", $7}' > ${snd_avg_goodput}
