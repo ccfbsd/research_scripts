@@ -5,14 +5,51 @@ if [  $# -ne 4 ]; then
     exit 1
 fi
 
+loop_run_without_drifting() {
+    local name="$1"
+    local src="$2"
+    local dst="$3"
+    local seconds="$4"
+    local script="$5"
+    
+    local interval=$(echo "${seconds} * 1.1" | bc | awk '{printf "%d\n", $1}')
+    local start_time=$(date +%s)
+    local next_time=$(( start_time + interval ))
+    echo "start_time: [${start_time}], interval: [${interval}]"
+
+    for i in {1..3}; do
+        folder="${name}.siftr.$i"
+        mkdir -p ${folder}
+        cd ${folder} || exit 1
+    
+        echo "[$(date +%s)] Running ${script} in ${folder}..."
+        bash ${script} ${name} ${src} ${dst} ${seconds}
+        finish_time=$(date +%s)
+        echo "script running finished at: [${finish_time}]"
+        cd ..
+        echo -e "next run is scheduled at: [${next_time}], delta: [$(( next_time - finish_time ))]\n"
+    
+        while true; do
+            local now=$(date +%s)
+            if [ "$now" -lt "$next_time" ]; then
+                sleep 0.1
+            else
+                next_time=$(( next_time + interval ))
+                break
+            fi
+        done
+    done
+}
+
 name=$1              # TCP congestion control name
 src=$2
 dst=$3
 seconds=$4
 
+script=/root/research_scripts/fbsd_snd.bash
+
 SIFTR2_NAME="siftr2.ko"  # Module name
 SIFTR2_PATH="/root/siftr2"  # Module location
-
 # Check if the module is already loaded
 if ! kldstat | grep -q "$SIFTR2_NAME"; then
     echo "Module $SIFTR2_NAME is not loaded. Loading it now..."
@@ -28,34 +65,19 @@ else
     echo "Module $SIFTR2_NAME is already loaded."
 fi
 
-interval=$(echo "${seconds} * 1.1" | bc | awk '{printf "%d\n", $1}')
-start_time=$(date +%s)
-next_time=$(( start_time + interval ))
-echo "start_time: [$start_time], interval: [$interval]"
+dir=$(pwd)
+def_stack_folder="${dir}/def_stack"
+mkdir -p ${def_stack_folder}
+rack_stack_folder="${dir}/rack_stack"
+mkdir -p ${rack_stack_folder}
 
-script=/root/research_scripts/fbsd_snd.bash
-for i in {1..5}; do
-    folder="${name}.siftr.$i"
-    mkdir -p "${folder}"
-    cd "${folder}" || exit 1
+cd ${def_stack_folder} || exit 1
+loop_run_without_drifting ${name} ${src} ${dst} ${seconds} ${script}
 
-    echo "[$(date +%s)] Running ${script} in $folder..."
-    bash ${script} ${name} ${src} ${dst} ${seconds}
-    finish_time=$(date +%s)
-    echo "script running finished at: [${finish_time}]"
-    cd ..
-    echo -e "next run is scheduled at: [${next_time}], delta: [$(( next_time - finish_time ))]\n"
+cd ${rack_stack_folder} || exit 1
+kldload "tcp_rack.ko"
+sysctl net.inet.tcp.functions_default=rack
+loop_run_without_drifting ${name} ${src} ${dst} ${seconds} ${script}
 
-    while true; do
-        now=$(date +%s)
-        if [ "$now" -lt "$next_time" ]; then
-            sleep 0.1
-        else
-            next_time=$(( next_time + interval ))
-            break
-        fi
-    done
-
-done
 
 kldunload siftr2
