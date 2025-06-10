@@ -3,40 +3,37 @@
 # Define a function to check if a folder is a leaf and generate a log
 generate_thruput_plot_if_leaf() {
     local dir="$1"
-    local bdp="$2"
+    local sec="$2"
+    local bdp="$3"
 
     # Check if the directory has no subdirectories
     if ! find "${dir}" -mindepth 1 -maxdepth 1 -type d | grep -q .; then
-        local iperf3_logs=(${dir}/*.iperf3_output.log)
-        # Check if exactly two matching iperf3 logs exist
-        if [ ${#iperf3_logs[@]} -ne 2 ] || [ ! -e "${iperf3_logs[0]}" ] || [ ! -e "${iperf3_logs[1]}" ]; then
-            echo "Skipping ${dir}: required iperf3 logs not found"
+        local iperf_logs=(${dir}/*.iperf_output.log)
+        # Check if exactly two matching iperf logs exist
+        if [ ${#iperf_logs[@]} -ne 2 ] || [ ! -e "${iperf_logs[0]}" ] || [ ! -e "${iperf_logs[1]}" ]; then
+            echo "Skipping ${dir}: required iperf logs not found"
             return
         fi
 
         # Extract prefixes
         local src1 src2
-        src1=$(basename "${iperf3_logs[0]}" | cut -d. -f1)
-        src2=$(basename "${iperf3_logs[1]}" | cut -d. -f1)
+        src1=$(basename "${iperf_logs[0]}" | cut -d. -f1)
+        src2=$(basename "${iperf_logs[1]}" | cut -d. -f1)
         
-        local flow1_cc=$(grep "snd_tcp_congestion" "${iperf3_logs[0]}" | awk '{printf "%s\n", $2}')
-        local flow2_cc=$(grep "snd_tcp_congestion" "${iperf3_logs[1]}" | awk '{printf "%s\n", $2}')
+        local flow1_cc=$(grep "TCP congestion control set to" "${iperf_logs[0]}" | awk '{printf "%s\n", $6}')
+        local flow2_cc=$(grep "TCP congestion control set to" "${iperf_logs[1]}" | awk '{printf "%s\n", $6}')
         [ "${flow1_cc}" = "${flow2_cc}" ] || { echo "Assertion failed: ${flow1_cc} != ${flow2_cc}"; exit 1; }
         local cc_algo=$(echo "$flow1_cc" | tr 'A-Z' 'a-z')      ## lower case
 
         local n1_mbps="${dir}/${src1}.mbps_timeline.txt"
         local n2_mbps="${dir}/${src2}.mbps_timeline.txt"
-        local flow1_duration=$(awk 'END { print $1 }' "${n1_mbps}")
-        local flow2_duration=$(awk 'END { print $1 }' "${n2_mbps}")
-        [ "${flow1_duration}" = "${flow2_duration}" ] || { echo "Assertion failed: ${flow1_duration} != ${flow2_duration}"; exit 1; }
-        local max_duration=$(echo "$flow1_duration $flow2_duration" | awk '{print ($1 > $2) ? $1 : $2}')
 
         local n1_avg="${dir}/${src1}.avg.goodput"
         local n2_avg="${dir}/${src2}.avg.goodput"
         local agg_mbps="${dir}/aggregated_time_mbps.txt"
         awk 'NR==FNR {data[int($1)]=$2; next} {print int($1), data[int($1)] + $2}' ${n1_mbps} ${n2_mbps} > ${agg_mbps}
         
-        local output_file="all_throughput_chart.pdf"
+        local output_file="all_throughput_chart_${sec}.pdf"
         local thruput_output="${dir}/${output_file}"
         echo "generating gnuplot figure ${output_file}"
 
@@ -52,7 +49,7 @@ set tmargin 3       # Top margin
 set mxtics
 set autoscale fix
 set xlabel "time (second)"
-set xrange [0:${max_duration}]
+set xrange [0:${sec}]
 
 # plot throughput
 set title "${throughput_title_str}"
@@ -77,24 +74,25 @@ EOF
 # Define a function to check if a folder is a leaf and generate a log
 generate_cwnd_plot_if_leaf() {
     local dir="$1"
-    local bdp="$2"
+    local sec="$2"
+    local bdp="$3"
 
     # Check if the directory has no subdirectories
     if ! find "${dir}" -mindepth 1 -maxdepth 1 -type d | grep -q .; then
-        local iperf3_logs=(${dir}/*.iperf3_output.log)
-        # Check if exactly two matching iperf3 logs exist
-        if [ ${#iperf3_logs[@]} -ne 2 ] || [ ! -e "${iperf3_logs[0]}" ] || [ ! -e "${iperf3_logs[1]}" ]; then
-            echo "Skipping ${dir}: required iperf3 logs not found"
+        local iperf_logs=(${dir}/*.iperf_output.log)
+        # Check if exactly two matching iperf logs exist
+        if [ ${#iperf_logs[@]} -ne 2 ] || [ ! -e "${iperf_logs[0]}" ] || [ ! -e "${iperf_logs[1]}" ]; then
+            echo "Skipping ${dir}: required iperf logs not found"
             return
         fi
 
         # Extract prefixes
         local src1 src2
-        src1=$(basename "${iperf3_logs[0]}" | cut -d. -f1)
-        src2=$(basename "${iperf3_logs[1]}" | cut -d. -f1)
+        src1=$(basename "${iperf_logs[0]}" | cut -d. -f1)
+        src2=$(basename "${iperf_logs[1]}" | cut -d. -f1)
 
-        local flow1_cc=$(grep "snd_tcp_congestion" "${iperf3_logs[0]}" | awk '{printf "%s\n", $2}')
-        local flow2_cc=$(grep "snd_tcp_congestion" "${iperf3_logs[1]}" | awk '{printf "%s\n", $2}')
+        local flow1_cc=$(grep "TCP congestion control set to" "${iperf_logs[0]}" | awk '{printf "%s\n", $6}')
+        local flow2_cc=$(grep "TCP congestion control set to" "${iperf_logs[1]}" | awk '{printf "%s\n", $6}')
         [ "${flow1_cc}" = "${flow2_cc}" ] || { echo "Assertion failed: ${flow1_cc} != ${flow2_cc}"; exit 1; }
         local cc_algo=$(echo "$flow1_cc" | tr 'A-Z' 'a-z')      ## lower case
         
@@ -109,10 +107,6 @@ generate_cwnd_plot_if_leaf() {
 
         local n1_mbps="${dir}/${src1}.mbps_timeline.txt"
         local n2_mbps="${dir}/${src2}.mbps_timeline.txt"
-        local flow1_duration=$(awk 'END { print $1 }' "${n1_mbps}")
-        local flow2_duration=$(awk 'END { print $1 }' "${n2_mbps}")
-        [ "${flow1_duration}" = "${flow2_duration}" ] || { echo "Assertion failed: ${flow1_duration} != ${flow2_duration}"; exit 1; }
-        local max_duration=$(echo "$flow1_duration $flow2_duration" | awk '{print ($1 > $2) ? $1 : $2}')
 
         read f1_min_cwnd f1_avg_cwnd f1_max_cwnd f1_min_srtt f1_avg_srtt f1_max_srtt <<< $(awk '
         NR > 1 {
@@ -139,7 +133,7 @@ generate_cwnd_plot_if_leaf() {
             count++
         }
         END {
-            print min_cwnd, cwnd_sum/count, max_cwnd, min_srtt, srtt_sum/count, max_srtt
+            print min_cwnd, int(cwnd_sum/count), max_cwnd, min_srtt, int(srtt_sum/count), max_srtt
         }' "${flow2_plot}")
 
         local max_cwnd=$(echo "$f1_max_cwnd $f2_max_cwnd" | awk '{print ($1 > $2) ? $1 : $2}')
@@ -148,11 +142,12 @@ generate_cwnd_plot_if_leaf() {
         local flow1_srtt_stats="avg\\\_srtt: ${f1_avg_srtt}, min\\\_srtt: ${f1_min_srtt}, max\\\_srtt: ${f1_max_srtt} µs"
         local flow2_srtt_stats="avg\\\_srtt: ${f2_avg_srtt}, min\\\_srtt: ${f2_min_srtt}, max\\\_srtt: ${f2_max_srtt} µs"
 
-        local output_file="all_cwnd_chart.pdf"
+        local output_file="all_cwnd_chart_${sec}.pdf"
         local cwnd_output="${dir}/${output_file}"
         echo "generating gnuplot figure ${output_file}"
 
         cwnd_title_str="Linux ${cc_algo} congestion window ${bdp}"
+        local pt_interval=$((sec * 10))
 
 gnuplot -persist <<EOF
 set term pdfcairo color lw 1 dashlength 1 enhanced font "DejaVu Sans Mono,16" dashed size 8in,6in background rgb "white"
@@ -164,7 +159,7 @@ set tmargin 3       # Top margin
 set mxtics
 set autoscale fix
 set xlabel "time (second)"
-set xrange [0:${max_duration}]
+set xrange [0:${sec}]
 
 # first plot cwnd
 set title "${cwnd_title_str}"
@@ -172,8 +167,8 @@ set output "${cwnd_output}"
 set ylabel "cwnd (byte)"
 set yrange [0:${ymax_cwnd}]
 # linecolor(lc), linetype(lt), linewidth(lw), dashtype(dt), pointtype(pt)
-set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval 5000
-set style line 2 lc rgb 'blue' lt 1 lw 2 pt 2 pointsize 1 pointinterval 5000
+set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval ${pt_interval}
+set style line 2 lc rgb 'blue' lt 1 lw 2 pt 2 pointsize 1 pointinterval ${pt_interval}
 
 plot "${flow1_plot}" using 1:3 title "flow1: ${flow1_srtt_stats}" with linespoints ls 1, \
      "${flow2_plot}" using 1:3 title "flow2: ${flow2_srtt_stats}" with linespoints ls 2
@@ -181,12 +176,13 @@ EOF
     fi
 }
 
-if [  $# -ne 1 ]; then
-    echo -e "\nUsage:\n$0 <comment>\n example: bash $0 under 0.27%BDP bottleneck buffer\n"
+if [  $# -ne 2 ]; then
+    echo -e "\nUsage:\n$0 <comment>\n example: bash $0 300 'under 0.27%BDP bottleneck buffer'\n"
     exit 1
 fi
 
-bdp_comment=$1
+seconds=$1
+bdp_comment=$2
 bdp_comment="${bdp_comment//_/\\\\\\_}"
 
 # Starting point (you can set this to any path)
@@ -195,6 +191,6 @@ root_dir="."
 # Find all directories and apply the function
 find "$root_dir" -type d | while read -r dir; do
     echo -e "under ${dir}:"
-    generate_thruput_plot_if_leaf "$dir" "${bdp_comment}"
-    generate_cwnd_plot_if_leaf "$dir" "${bdp_comment}"
+    generate_thruput_plot_if_leaf "$dir" "${seconds}" "${bdp_comment}"
+    generate_cwnd_plot_if_leaf "$dir" "${seconds}" "${bdp_comment}"
 done
