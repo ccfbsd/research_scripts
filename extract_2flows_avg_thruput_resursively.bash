@@ -45,7 +45,7 @@ extract_goodput_info() {
                "${f2_avg_thruput}" "${sum}" "${fairness_pct}%" >> "${csv_file}"
 
         # Append to wiki table
-        printf "|| %s || %s || %s || %s || %s || %s ||\n" \
+        printf "|| %s || %s ||<)> %s ||<)> %s ||<)> %s ||<)> %s ||\n" \
                "${grandparent_folder}" "${parent_folder}" "${f1_avg_thruput}" \
                "${f2_avg_thruput}" "${sum}" "${fairness_pct}%" >> "${table_file}"
     fi
