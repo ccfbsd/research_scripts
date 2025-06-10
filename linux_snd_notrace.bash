@@ -10,18 +10,20 @@ src=$2
 dst=$3
 seconds=$4
 
-dir=$(pwd)
-tcp_port=54321
-iperf_log_name=${src}.iperf3_output.log
-snd_avg_goodput=${src}.avg.goodput
-tmp_name=${src}.tmp.log
+dir="$(pwd)"
+iperf_svr_port=5001
+iperf3_svr_port=5201
+log_name="${src}.test.log"
+iperf_log_name="${src}.iperf_output.log"
+snd_avg_goodput="${src}.avg.goodput"
+throughput_timeline="${src}.mbps_timeline.txt"
 
-iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 -f m -VC ${name} > ${iperf_log_name}
+uname -rv | tee ${log_name}
+sysctl net.ipv4.tcp_congestion_control=${name} | tee -a ${log_name}
 
+#iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 -f m -VC ${name} > ${iperf_log_name}
+iperf -B ${src} -c ${dst} -t ${seconds} -i 1 -f m -eZ ${name} > ${iperf_log_name}
 
-awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}' ${iperf_log_name} > ${tmp_name}
-sed '1d' ${tmp_name} | sed '$d' | sed '$d' > ${src}.mbps_timeline.txt
-
-grep -E -A 2 "Summary Results" ${iperf_log_name} | grep "sender" | awk '{printf "%.2f\n", $7}' > ${snd_avg_goodput}
-
-rm ${tmp_name}
+awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}'\
+    ${iperf_log_name} | sed '$d' > ${throughput_timeline}
+tail -n 1 ${iperf_log_name} | awk '{printf "%.1f\n", $7}' > ${snd_avg_goodput}
