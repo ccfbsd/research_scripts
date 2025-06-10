@@ -41,7 +41,6 @@ rg "tcp_probe" /sys/kernel/debug/tracing/trace | rg -v "rs:main" > ${trace_name}
 echo > /sys/kernel/debug/tracing/trace
 
 du -h ${trace_name}
-du -h ${plot_file}
 
 awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}'\
     ${iperf_log_name} | sed '$d' > ${throughput_timeline}
@@ -59,6 +58,8 @@ awk '/tcp_probe/ {gsub(":", "", $4); gsub("snd_cwnd=", "", $13);\
 ## then print the snd_cwnd value, the cwnd in bytes and the srtt in microseconds
 awk 'NR==1 {start=$1} {printf "%.6f\t%s\t%d\t%s\n", $1 - start, $2, $2 * 1448, $3}'\
     ${tmp_name} > ${plot_file}
+
+du -h ${plot_file}
 
 tar zcf ${trace_name}.tgz ${trace_name}
 tar zcf ${plot_file}.tgz ${plot_file}
