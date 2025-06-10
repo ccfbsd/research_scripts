@@ -10,6 +10,8 @@ src=$2
 dst=$3
 seconds=$4
 
+start_time=$(date +%s.%N)
+
 dir="$(pwd)"
 iperf_svr_port=5001
 iperf3_svr_port=5201
@@ -27,3 +29,8 @@ iperf -B ${src} -c ${dst} -t ${seconds} -i 1 -f m -eZ ${name} > ${iperf_log_name
 awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}'\
     ${iperf_log_name} | sed '$d' > ${throughput_timeline}
 tail -n 1 ${iperf_log_name} | awk '{printf "%.1f\n", $7}' > ${snd_avg_goodput}
+
+end_time=$(date +%s.%N)
+elapsed=$(echo "$end_time - $start_time" | bc)
+
+printf "Execution time: %.1f seconds\n" "$elapsed"
