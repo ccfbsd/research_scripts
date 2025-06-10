@@ -28,20 +28,20 @@ uname -rv | tee ${log_name}
 sysctl net.ipv4.tcp_congestion_control=${name} | tee -a ${log_name}
 
 echo "dport == ${iperf_svr_port}" > /sys/kernel/debug/tracing/events/tcp/tcp_probe/filter
-echo 800000 > /sys/kernel/debug/tracing/buffer_size_kb
+echo 768000 > /sys/kernel/debug/tracing/buffer_size_kb
 echo > /sys/kernel/debug/tracing/trace
 echo 1 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 
 #iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 -f m -VC ${name} > ${iperf_log_name}
 iperf -B ${src} -c ${dst} -t ${seconds} -i 1 -f m -eZ ${name} > ${iperf_log_name}
 echo 0 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
-cat /sys/kernel/debug/tracing/trace > ${trace_name}
-echo > /sys/kernel/debug/tracing/trace
 
 ## remove error message that does not match format
-sed -i '/rs:main/d' ${trace_name}
+rg "tcp_probe" /sys/kernel/debug/tracing/trace | rg -v "rs:main" > ${trace_name}
+echo > /sys/kernel/debug/tracing/trace
 
 du -h ${trace_name}
+du -h ${plot_file}
 
 awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}'\
     ${iperf_log_name} | sed '$d' > ${throughput_timeline}
