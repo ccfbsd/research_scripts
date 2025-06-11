@@ -39,12 +39,26 @@ generate_thruput_plot_if_leaf() {
         local cc_algo=$(echo "$flow1_cc" | tr 'A-Z' 'a-z')      ## lower case
 
         local n1_mbps="${dir}/${src1}.mbps_timeline.txt"
+        local n1_mbps_sec="${dir}/${src1}.mbps_timeline.${sec}.txt"
         local n2_mbps="${dir}/${src2}.mbps_timeline.txt"
-
-        local n1_avg="${dir}/${src1}.avg.goodput"
-        local n2_avg="${dir}/${src2}.avg.goodput"
-        local agg_mbps="${dir}/aggregated_time_mbps.txt"
-        awk 'NR==FNR {data[int($1)]=$2; next} {print int($1), data[int($1)] + $2}' ${n1_mbps} ${n2_mbps} > ${agg_mbps}
+        local n2_mbps_sec="${dir}/${src2}.mbps_timeline.${sec}.txt"
+        awk -v sec="${sec}" '$1 <= sec' "${n1_mbps}" > "${n1_mbps_sec}"
+        awk -v sec="${sec}" '$1 <= sec' "${n2_mbps}" > "${n2_mbps_sec}"
+        
+        read n1_avg_sec <<< $(awk ' NR > 1 { mbps_sum += $2; count++; } 
+        END { print int(mbps_sum/count) }' "${n1_mbps_sec}")
+        
+        read n2_avg_sec <<< $(awk ' NR > 1 { mbps_sum += $2; count++; } 
+        END { print int(mbps_sum/count) }' "${n2_mbps_sec}")
+        
+        local n1_avg="${dir}/${src1}.avg.${sec}.goodput"
+        echo ${n1_avg_sec} > ${n1_avg}
+        local n2_avg="${dir}/${src2}.avg.${sec}.goodput"
+        echo ${n2_avg_sec} > ${n2_avg}
+        
+        local agg_mbps_sec="${dir}/aggregated_time_mbps.${sec}.txt"
+        awk 'NR==FNR {data[int($1)]=$2; next} {print int($1), data[int($1)] + $2}'\
+            ${n1_mbps_sec} ${n2_mbps_sec} > ${agg_mbps_sec}
         
         local output_file="all_throughput_chart_${sec}.pdf"
         local thruput_output="${dir}/${output_file}"
@@ -74,12 +88,12 @@ set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval 4
 set style line 2 lc rgb 'blue' lt 1 lw 2 pt 2 pointsize 1 pointinterval 4
 set style line 3 lc rgb 'green' lt 1 lw 2 pt 3 pointsize 1 pointinterval 4
 
-f1_avg = real(system("awk '{print}' ${n1_avg}"))
-f2_avg = real(system("awk '{print}' ${n2_avg}"))
-link_avg = (f1_avg + f2_avg)
-plot "${n1_mbps}" using 1:2 title sprintf("flow1: average throughput = %.1f Mbits/sec", f1_avg) with linespoints ls 1, \
-     "${n2_mbps}" using 1:2 title sprintf("flow2: average throughput = %.1f Mbits/sec", f2_avg) with linespoints ls 2, \
-     "${agg_mbps}" using 1:2 title sprintf("aggregated throughput: average link utilization = %.1f Mbits/sec", link_avg) with linespoints ls 3
+f1_avg_sec = real(system("awk '{print}' ${n1_avg}"))
+f2_avg_sec = real(system("awk '{print}' ${n2_avg}"))
+link_avg_sec = (f1_avg_sec + f2_avg_sec)
+plot "${n1_mbps_sec}" using 1:2 title sprintf("flow1: first %d seconds average throughput = %.1f Mbits/sec", ${sec}, f1_avg_sec) with linespoints ls 1, \
+     "${n2_mbps_sec}" using 1:2 title sprintf("flow2: first %d seconds average throughput = %.1f Mbits/sec", ${sec}, f2_avg_sec) with linespoints ls 2, \
+     "${agg_mbps_sec}" using 1:2 title sprintf("first %d seconds average link utilization = %.1f Mbits/sec", ${sec}, link_avg_sec) with linespoints ls 3
 EOF
     fi
 }
