@@ -1,14 +1,16 @@
 #!/bin/bash
 
-if [  $# -ne 4 ]; then
-    echo -e "\nUsage:\n$0 <name> <src> <dst> <seconds>\n example: bash $0 cubic s1 r1 10\n"
+if [  $# -ne 5 ]; then
+    echo -e "\nUsage:\n$0 <name> <src> <dst> <seconds> <num_of_streams> \n"
+    echo -e " example: bash $0 cubic s1 r1 10 2\n"
     exit 1
 fi
 
-name=$1              # TCP congestion control name
+name=$1             # TCP congestion control name
 src=$2
 dst=$3
 seconds=$4
+parallel=$5         # number of parallel client streams to run
 
 start_time=$(date +%s.%N)
 
@@ -28,12 +30,12 @@ uname -rv | tee ${log_name}
 sysctl net.ipv4.tcp_congestion_control=${name} | tee -a ${log_name}
 
 echo "dport == ${iperf_svr_port}" > /sys/kernel/debug/tracing/events/tcp/tcp_probe/filter
-echo 768000 > /sys/kernel/debug/tracing/buffer_size_kb
+echo 512000 > /sys/kernel/debug/tracing/buffer_size_kb
 echo > /sys/kernel/debug/tracing/trace
 echo 1 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 
 #iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 -f m -VC ${name} > ${iperf_log_name}
-iperf -B ${src} -c ${dst} -t ${seconds} -i 1 -f m -eZ ${name} > ${iperf_log_name}
+iperf -B ${src} -c ${dst} -t ${seconds} -i 1 -f m -eZ ${name} -P ${parallel} > ${iperf_log_name}
 echo 0 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 
 ## remove error message that does not match format
@@ -44,7 +46,12 @@ du -h ${trace_name}
 
 awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}'\
     ${iperf_log_name} | sed '$d' > ${throughput_timeline}
-tail -n 1 ${iperf_log_name} | awk '{printf "%.1f\n", $7}' > ${snd_avg_goodput}
+
+if [ ${parallel} -gt 1 ]; then
+    tail -n 2 ${iperf_log_name} | rg "SUM" | awk '{printf "%.1f\n", $6}' > ${snd_avg_goodput}
+else
+    tail -n 1 ${iperf_log_name} | awk '{printf "%.1f\n", $7}' > ${snd_avg_goodput}
+fi
 
 ## gsub(":", "", $4): Removes the colon from the timestamp ($4).
 ## gsub("snd_cwnd=", "", $13): Removes "snd_cwnd=" from the field ($13).
