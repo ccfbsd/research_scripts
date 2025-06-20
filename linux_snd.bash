@@ -23,8 +23,15 @@ tcpdump_name="${src}.${name}.pcap"
 iperf_log_name="${src}.iperf_output.log"
 snd_avg_goodput="${src}.avg.goodput"
 throughput_timeline="${src}.mbps_timeline.txt"
-tmp_name="${src}.tmp"
-plot_file="${src}.plot.txt"
+plot_dir="${src}.plot_files"
+
+trace_parser="/root/tcp_probe_parser/tcp_probe_parser"
+if [[ -f "${trace_parser}" && -x "${trace_parser}" ]]; then
+    echo "${trace_parser} exists and is executable."
+else
+    echo "${trace_parser} does not exist or is not executable."
+    exit 1
+fi
 
 uname -rv | tee ${log_name}
 sysctl net.ipv4.tcp_congestion_control=${name} | tee -a ${log_name}
@@ -61,59 +68,65 @@ else
     tail -n 1 ${iperf_log_name} | awk '{printf "%.1f\n", $7}' > ${snd_avg_goodput}
 fi
 
-## gsub(":", "", $4): Removes the colon from the timestamp ($4).
-## gsub("snd_cwnd=", "", $13): Removes "snd_cwnd=" from the field ($13).
-## gsub("srtt=", "", $16): Removes "srtt=" from the field ($16).
-## print $4 "\t" $13: Outputs the cleaned timestamp and snd_cwnd values.
-awk '/tcp_probe/ {gsub(":", "", $4); gsub("snd_cwnd=", "", $13);\
-    gsub("srtt=", "", $16); print $4 "\t" $13 "\t" $16}' ${trace_name} > ${tmp_name}
+avg_goodput=$(cat ${snd_avg_goodput} | tr -d '\r\n')
+echo "sender average throughput: [${avg_goodput}]"
 
-## NR==1 {start=$1}: Sets the first timestamp as the start time (only for the first line).
-## $1 - start: Subtracts the start timestamp from each subsequent timestamp to get a relative time.
-## then print the snd_cwnd value, the cwnd in bytes and the srtt in microseconds
-awk 'NR==1 {start=$1} {printf "%.6f\t%s\t%d\t%s\n", $1 - start, $2, $2 * 1448, $3}'\
-    ${tmp_name} > ${plot_file}
+# Run the binary and extract the flow_id value
+${trace_parser} -f "${trace_name}" -p "${src}" -a | tee -a ${log_name}
 
-du -h ${plot_file}
-
-tar zcf ${trace_name}.tgz ${trace_name}
-tar zcf ${plot_file}.tgz ${plot_file}
-
-read min_cwnd avg_cwnd max_cwnd min_srtt avg_srtt max_srtt <<< $(awk '
-NR > 1 {
-	cwnd_sum += $3
-	srtt_sum += $4
-	if (min_cwnd == "" || $3 < min_cwnd) min_cwnd = $3
-	if (max_cwnd == "" || $3 > max_cwnd) max_cwnd = $3
-	if (min_srtt == "" || $4 < min_srtt) min_srtt = $4
-	if (max_srtt == "" || $4 > max_srtt) max_srtt = $4
-	count++
-}
-END {
-	print min_cwnd, cwnd_sum/count, max_cwnd, min_srtt, srtt_sum/count, max_srtt
-}' "${plot_file}")
-
-ymax_cwnd=$(echo "$max_cwnd * 1.25" | bc)
-ymax_srtt=$(echo "$max_srtt * 1.25" | bc)
-avg_cwnd=$(echo "${avg_cwnd}" | awk '{printf "%d\n", $1}')
-avg_srtt=$(echo "${avg_srtt}" | awk '{printf "%d\n", $1}')
-cwnd_stats="avg\\\_cwnd: ${avg_cwnd}, min\\\_cwnd: ${min_cwnd}, max\\\_cwnd: ${max_cwnd} bytes"
-srtt_stats="avg\\\_srtt: ${avg_srtt}, min\\\_srtt: ${min_srtt}, max\\\_srtt: ${max_srtt} µs"
+declare -A avg_srtt min_srtt max_srtt avg_cwnd min_cwnd max_cwnd
+# Parse test log
+max_cwnd_global=0
+max_srtt_global=0
+while IFS= read -r line; do
+    if [[ $line == *"flowid:"* ]]; then
+        id=$(echo "$line" | grep -oP 'flowid:\s*\K[0-9]+')
+        avg_tt=$(echo "$line" | grep -oP 'avg_srtt:\s*\K[0-9]+')
+        min_tt=$(echo "$line" | grep -oP 'min_srtt:\s*\K[0-9]+')
+        max_tt=$(echo "$line" | grep -oP 'max_srtt:\s*\K[0-9]+')
+        avg_cw=$(echo "$line" | grep -oP 'avg_cwnd:\s*\K[0-9]+')
+        min_cw=$(echo "$line" | grep -oP 'min_cwnd:\s*\K[0-9]+')
+        max_cw=$(echo "$line" | grep -oP 'max_cwnd:\s*\K[0-9]+')
+        avg_srtt[$id]=$avg_tt
+        min_srtt[$id]=$min_tt
+        max_srtt[$id]=$max_tt
+        avg_cwnd[$id]=$avg_cw
+        min_cwnd[$id]=$min_cw
+        max_cwnd[$id]=$max_cw
+        # Track global max cwnd and srtt
+        if (( max_cw > max_cwnd_global )); then
+            max_cwnd_global=$max_cw
+        fi
+        if (( max_tt > max_srtt_global )); then
+            max_srtt_global=$max_tt
+        fi
+#        echo "${id} ${avg_srtt[$id]} ${min_srtt[$id]} ${max_srtt[$id]}" \
+#             "${avg_cwnd[$id]} ${min_cwnd[$id]} ${max_cwnd[$id]}"
+    fi
+done < ${log_name}
+total_socks=$(grep -oP 'flow_count:\s*\K[0-9]+' ${log_name})
+ymax_cwnd=$(echo "${max_cwnd_global} + ${max_cwnd_global} * 0.2 * ${parallel}" | bc)
+ymax_srtt=$(echo "${max_srtt_global} + ${max_srtt_global} * 0.2 * ${parallel}" | bc)
+#echo "total_socks: [${total_socks}], ymax_cwnd: [${ymax_cwnd}], ymax_srtt: [${ymax_srtt}]"
 
 echo "generating gnuplot figure..."
 
-cwnd_title_str="${src} ${name} cwnd chart"
-srtt_title_str="${src} ${name} srtt chart"
+cwnd_title_str="sender '${src}' ${name} cwnd chart"
+srtt_title_str="sender '${src}' ${name} srtt chart"
 pt_interval=$((seconds * 100))
 
 gnuplot -persist << EOF
 set encoding utf8
-set term pdfcairo color lw 1 dashlength 1 enhanced font "DejaVu Sans Mono,16" dashed size 12in,9in background rgb "white"
+set term pdfcairo color lw 1 dashlength 1 enhanced font "DejaVu Sans Mono,16"\
+    dashed size 12in,9in background rgb "white"
 set output "${src}.cwnd_srtt.pdf"
-set multiplot layout 2,1 title "Flow Analysis" offset 4.0,0.0
+set multiplot layout 2,1 title "TCP Analysis" offset 4.0,0.0
 
 # linecolor(lc), linetype(lt), linewidth(lw), dashtype(dt), pointtype(pt)
 set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval ${pt_interval}
+set style line 2 lc rgb 'blue' lt 1 lw 2 pt 2 pointsize 1 pointinterval ${pt_interval}
+set style line 3 lc rgb 'green' lt 1 lw 2 pt 3 pointsize 1 pointinterval ${pt_interval}
+set style line 4 lc rgb 'orange' lt 1 lw 2 pt 4 pointsize 1 pointinterval ${pt_interval}
 
 set xtics nomirror
 set ytics nomirror
@@ -127,21 +140,49 @@ set xrange [0:${seconds}]
 
 # First plot cwnd
 set title "${cwnd_title_str}"
-set ylabel "cwnd (byte)"
+set ylabel "cwnd (segments)"
 set yrange [0:${ymax_cwnd}]
-plot "${plot_file}" using 1:3 title "flow1: ${cwnd_stats}" with linespoints ls 1
+plot \\
+$( 
+    count=0
+    total=${total_socks}
+    for id in "${!avg_cwnd[@]}"; do
+        count=$((count+1))
+        echo -n "'${plot_dir}/${id}.txt' using 1:2 title "\
+                "'socket ${id} (avgCW=${avg_cwnd[$id]}, minCW=${min_cwnd[$id]},"\
+                "maxCW=${max_cwnd[$id]} segments)' with linespoints ls $count"
+        if [ $count -lt $total ]; then
+            echo ", \\"
+        else
+            echo ""
+        fi
+    done
+)
 
 # Second plot
 set title "${srtt_title_str}"
 set ylabel "srtt (microsecond)"
 set yrange [0:${ymax_srtt}]
-plot "${plot_file}" using 1:4 title "flow1: ${srtt_stats}" with linespoints ls 1
+plot \\
+$( 
+    count=0
+    total=${total_socks}
+    for id in "${!avg_srtt[@]}"; do
+        count=$((count+1))
+        echo -n "'${plot_dir}/${id}.txt' using 1:3 title "\
+                "'socket ${id} (avgSRTT=${avg_srtt[$id]}, minSRTT=${min_srtt[$id]}," \
+                "maxSRTT=${max_srtt[$id]} µs)' with linespoints ls $count"
+        if [ $count -lt $total ]; then
+            echo ", \\"
+        else
+            echo ""
+        fi
+    done
+)
 
 unset multiplot
 unset output
 EOF
-
-rm ${tmp_name} ${trace_name} ${plot_file}
 
 end_time=$(date +%s.%N)
 elapsed=$(echo "$end_time - $start_time" | bc)
