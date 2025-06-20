@@ -44,9 +44,17 @@ echo > /sys/kernel/debug/tracing/trace
 
 du -h ${trace_name}
 
-awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}'\
+## get the average throughput per timeline
+if [ ${parallel} -gt 1 ]; then
+    rg "SUM" ${iperf_log_name} | \
+    awk '/sec/ {split($2, interval, "-"); printf "%d\t%s\n", int(interval[2]), $6}' |\
+    sed '$d' > ${throughput_timeline}
+else
+    awk '/sec/ {split($3, interval, "-"); printf "%d\t%s\n", int(interval[2]), $7}'\
     ${iperf_log_name} | sed '$d' > ${throughput_timeline}
+fi
 
+## get the final average throughput
 if [ ${parallel} -gt 1 ]; then
     tail -n 2 ${iperf_log_name} | rg "SUM" | awk '{printf "%.1f\n", $6}' > ${snd_avg_goodput}
 else
