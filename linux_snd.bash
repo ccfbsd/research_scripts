@@ -61,6 +61,9 @@ else
     ${iperf_log_name} | sed '$d' > ${throughput_timeline}
 fi
 
+max_thruput_timeline=$(awk 'BEGIN {max = 0} {if ($2 > max) max = $2} END {print max}'\
+                     ${throughput_timeline})
+
 ## get the final average throughput
 if [ ${parallel} -gt 1 ]; then
     tail -n 2 ${iperf_log_name} | rg "SUM" | awk '{printf "%.1f\n", $6}' > ${snd_avg_goodput}
@@ -103,8 +106,8 @@ while IFS= read -r line; do
 done < ${log_name}
 total_socks=$(grep -oP 'flow_count:\s*\K[0-9]+' ${log_name})
 ymax_cwnd=$(echo "${max_cwnd_global} + ${max_cwnd_global} * 0.2 * ${parallel}" | bc)
-ymax_srtt=$(echo "${max_srtt_global} + ${max_srtt_global} * 0.2 * ${parallel}" | bc)
-ymax_thruput=$(echo "${avg_goodput} * 1.5" | bc)
+ymax_srtt=$(echo "${max_srtt_global} + ${max_srtt_global} * 0.4 * ${parallel}" | bc)
+ymax_thruput=$(echo "${max_thruput_timeline} * 1.4" | bc)
 #echo "total_socks: [${total_socks}], ymax_srtt: [${ymax_srtt}], ymax_cwnd: [${ymax_cwnd}]"
 
 echo "generating gnuplot figure..."
