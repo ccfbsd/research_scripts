@@ -24,8 +24,9 @@ iperf_log_name="${src}.iperf_output.log"
 snd_avg_goodput="${src}.avg.goodput"
 throughput_timeline="${src}.mbps_timeline.txt"
 plot_dir="${src}.plot_files"
-
+system_trace="/sys/kernel/debug/tracing/trace"
 trace_parser="/root/tcp_probe_parser/tcp_probe_parser"
+
 if [[ -f "${trace_parser}" && -x "${trace_parser}" ]]; then
     echo "${trace_parser} exists and is executable."
 else
@@ -34,22 +35,21 @@ else
 fi
 
 uname -rv | tee ${log_name}
+sysctl net.mptcp | tee -a ${log_name}
 sysctl net.ipv4.tcp_congestion_control=${name} | tee -a ${log_name}
 
 echo "dport == ${iperf_svr_port}" > /sys/kernel/debug/tracing/events/tcp/tcp_probe/filter
 echo 512000 > /sys/kernel/debug/tracing/buffer_size_kb
-echo > /sys/kernel/debug/tracing/trace
+echo > ${system_trace}
 echo 1 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 
 #iperf3 -B ${src} --cport ${tcp_port} -c ${dst} -p 5201 -l 1M -t ${seconds} -i 1 -f m -VC ${name} > ${iperf_log_name}
 iperf -B ${src} -c ${dst} -t ${seconds} -i 1 -f m -eZ ${name} -P ${parallel} > ${iperf_log_name}
 echo 0 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 
-## remove error message that does not match format
-rg "tcp_probe" /sys/kernel/debug/tracing/trace | rg -v "rs:main" > ${trace_name}
-echo > /sys/kernel/debug/tracing/trace
-
-du -h ${trace_name}
+# Run the binary and extract the flow_id value
+${trace_parser} -f ${system_trace} -p ${src} -a | tee -a ${log_name}
+echo > ${system_trace}
 
 ## get the average throughput per timeline
 if [ ${parallel} -gt 1 ]; then
@@ -70,9 +70,6 @@ fi
 
 avg_goodput=$(cat ${snd_avg_goodput} | tr -d '\r\n')
 echo "sender average throughput: [${avg_goodput}]"
-
-# Run the binary and extract the flow_id value
-${trace_parser} -f "${trace_name}" -p "${src}" -a | tee -a ${log_name}
 
 declare -A avg_srtt min_srtt max_srtt avg_cwnd min_cwnd max_cwnd
 # Parse test log
@@ -107,7 +104,7 @@ done < ${log_name}
 total_socks=$(grep -oP 'flow_count:\s*\K[0-9]+' ${log_name})
 ymax_cwnd=$(echo "${max_cwnd_global} + ${max_cwnd_global} * 0.2 * ${parallel}" | bc)
 ymax_srtt=$(echo "${max_srtt_global} + ${max_srtt_global} * 0.2 * ${parallel}" | bc)
-#echo "total_socks: [${total_socks}], ymax_cwnd: [${ymax_cwnd}], ymax_srtt: [${ymax_srtt}]"
+#echo "total_socks: [${total_socks}], ymax_srtt: [${ymax_srtt}], ymax_cwnd: [${ymax_cwnd}]"
 
 echo "generating gnuplot figure..."
 
