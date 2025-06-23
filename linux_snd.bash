@@ -26,6 +26,7 @@ throughput_timeline="${src}.mbps_timeline.txt"
 plot_dir="${src}.plot_files"
 system_trace="/sys/kernel/debug/tracing/trace"
 trace_parser="/root/tcp_probe_parser/tcp_probe_parser"
+num_subflows_file="/sys/module/mptcp_ndiffports/parameters/num_subflows"
 
 if [[ -f "${trace_parser}" && -x "${trace_parser}" ]]; then
     echo "${trace_parser} exists and is executable."
@@ -37,6 +38,10 @@ fi
 uname -rv | tee ${log_name}
 sysctl net.mptcp | tee -a ${log_name}
 sysctl net.ipv4.tcp_congestion_control=${name} | tee -a ${log_name}
+if [ -f "${num_subflows_file}" ]; then
+    num_subflows=$(cat ${num_subflows_file} | tr -d '\r\n')
+    echo "${num_subflows_file} = ${num_subflows}" | tee -a ${log_name}
+fi
 
 echo "dport == ${iperf_svr_port}" > /sys/kernel/debug/tracing/events/tcp/tcp_probe/filter
 echo 512000 > /sys/kernel/debug/tracing/buffer_size_kb
