@@ -27,6 +27,8 @@ plot_dir="${src}.plot_files"
 system_trace="/sys/kernel/debug/tracing/trace"
 trace_parser="/root/tcp_probe_parser/tcp_probe_parser"
 num_subflows_file="/sys/module/mptcp_ndiffports/parameters/num_subflows"
+num_segments_file="/sys/module/mptcp_rr/parameters/num_segments"
+cwnd_limited_file="/sys/module/mptcp_rr/parameters/cwnd_limited"
 
 if [[ -f "${trace_parser}" && -x "${trace_parser}" ]]; then
     echo "${trace_parser} exists and is executable."
@@ -41,6 +43,14 @@ sysctl net.ipv4.tcp_congestion_control=${name} | tee -a ${log_name}
 if [ -f "${num_subflows_file}" ]; then
     num_subflows=$(cat ${num_subflows_file} | tr -d '\r\n')
     echo "${num_subflows_file} = ${num_subflows}" | tee -a ${log_name}
+fi
+if [ -f "${num_segments_file}" ]; then
+    num_segments=$(cat ${num_segments_file} | tr -d '\r\n')
+    echo "${num_segments_file} = ${num_segments}" | tee -a ${log_name}
+fi
+if [ -f "${cwnd_limited_file}" ]; then
+    cwnd_limited=$(cat ${cwnd_limited_file} | tr -d '\r\n')
+    echo "${cwnd_limited_file} = ${cwnd_limited}" | tee -a ${log_name}
 fi
 
 echo "dport == ${iperf_svr_port}" > /sys/kernel/debug/tracing/events/tcp/tcp_probe/filter
