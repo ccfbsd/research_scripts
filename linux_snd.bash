@@ -38,7 +38,10 @@ else
 fi
 
 uname -rv | tee ${log_name}
-sysctl net.mptcp | tee -a ${log_name}
+if [ -f "/proc/sys/net/mptcp" ]; then
+    sysctl net.mptcp | tee -a ${log_name}
+fi
+
 sysctl net.ipv4.tcp_congestion_control=${name} | tee -a ${log_name}
 if [ -f "${num_subflows_file}" ]; then
     num_subflows=$(cat ${num_subflows_file} | tr -d '\r\n')
