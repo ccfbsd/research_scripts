@@ -66,7 +66,7 @@ iperf -B ${src} -c ${dst} -t ${seconds} -i 1 -f m -eZ ${name} -P ${parallel} > $
 echo 0 > /sys/kernel/debug/tracing/events/tcp/tcp_probe/enable
 
 # Run the binary and extract the flow_id value
-${trace_parser} -f ${system_trace} -p ${src} -a | tee -a ${log_name}
+${trace_parser} -f ${system_trace} -p ${src} -c -a | tee -a ${log_name}
 echo > ${system_trace}
 
 ## get the average throughput per timeline
