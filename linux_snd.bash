@@ -124,7 +124,7 @@ while IFS= read -r line; do
 done < ${log_name}
 total_socks=$(grep -oP 'flow_count:\s*\K[0-9]+' ${log_name})
 ymax_cwnd=$(echo "${max_cwnd_global} + ${max_cwnd_global} * 0.2 * ${parallel}" | bc)
-ymax_srtt=$(echo "${max_srtt_global} + ${max_srtt_global} * 0.4 * ${parallel}" | bc)
+ymax_srtt=$(echo "${max_srtt_global} + ${max_srtt_global} * 0.5 * ${parallel}" | bc)
 ymax_thruput=$(echo "${max_thruput_timeline} * 1.4" | bc)
 #echo "total_socks: [${total_socks}], ymax_srtt: [${ymax_srtt}], ymax_cwnd: [${ymax_cwnd}]"
 
@@ -138,7 +138,7 @@ pt_interval=$((seconds * 1))
 gnuplot -persist << EOF
 set encoding utf8
 set term pdfcairo color lw 1 dashlength 1 enhanced font "DejaVu Sans Mono,16"\
-    dashed size 12in,9in background rgb "white"
+    dashed size 12in,12in background rgb "white"
 set output "${src}.cwnd_srtt_thruput.pdf"
 set multiplot layout 3,1 title "TCP Analysis" offset 4.0,0.0
 
@@ -205,7 +205,7 @@ set title "${throughput_title_str}"
 set ylabel "throughput (Mbits/sec)"
 set yrange [0:${ymax_thruput}]
 # linecolor(lc), linetype(lt), linewidth(lw), dashtype(dt), pointtype(pt)
-set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval 1
+set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval 10
 plot "${throughput_timeline}" using 1:2  with linespoints ls 1 title \
      sprintf("${src}: average throughput = %.1f Mbits/sec", ${avg_goodput})
 
