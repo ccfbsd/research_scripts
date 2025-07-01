@@ -133,7 +133,7 @@ echo "generating gnuplot figure..."
 cwnd_title_str="sender '${src}' ${name} cwnd chart"
 srtt_title_str="sender '${src}' ${name} srtt chart"
 throughput_title_str="sender '${src}' ${name} throughput chart"
-pt_interval=$((seconds * 100))
+pt_interval=$((seconds * 1))
 
 gnuplot -persist << EOF
 set encoding utf8
