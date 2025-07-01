@@ -86,7 +86,7 @@ ymax_srtt=$(echo "${max_srtt_global} * 1.6" | bc)
 cwnd_title_str="cwnd chart"
 srtt_title_str="srtt chart"
 throughput_title_str="throughput chart"
-pt_interval=$((seconds * 100))
+pt_interval=$((seconds * 1))
 
 echo "generating gnuplot figure..."
 gnuplot -persist << EOF
@@ -95,7 +95,7 @@ set output "all_cwnd_srtt_thruput.pdf"
 set encoding utf8
 set term pdfcairo color lw 1 dashlength 1 enhanced font "DejaVu Sans Mono,16"\
     dashed size 12in,12in background rgb "white"
-set multiplot layout 3,1 title "NewRENO TCP Analysis ${bdp_comment}" offset 3.0,0.0
+set multiplot layout 3,1 title "NewReno TCP Analysis ${bdp_comment}" offset 3.0,0.0
 
 # linecolor(lc), linetype(lt), linewidth(lw), dashtype(dt), pointtype(pt)
 set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval ${pt_interval}
@@ -132,9 +132,9 @@ set title "${throughput_title_str}"
 set ylabel "throughput (Mbits/sec)"
 set yrange [0:${ymax_thruput}]
 # linecolor(lc), linetype(lt), linewidth(lw), dashtype(dt), pointtype(pt)
-set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval 5
-set style line 2 lc rgb 'blue' lt 1 lw 2 pt 2 pointsize 1 pointinterval 5
-set style line 3 lc rgb 'green' lt 1 lw 2 pt 3 pointsize 1 pointinterval 5
+set style line 1 lc rgb 'red' lt 1 lw 2 pt 1 pointsize 1 pointinterval 10
+set style line 2 lc rgb 'blue' lt 1 lw 2 pt 2 pointsize 1 pointinterval 10
+set style line 3 lc rgb 'green' lt 1 lw 2 pt 3 pointsize 1 pointinterval 10
 
 f1_avg = real(system("awk '{print}' ${snd1_avg}"))
 f2_avg = real(system("awk '{print}' ${snd2_avg}"))
