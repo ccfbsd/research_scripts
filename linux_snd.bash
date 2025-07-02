@@ -123,7 +123,7 @@ while IFS= read -r line; do
     fi
 done < ${log_name}
 total_socks=$(grep -oP 'flow_count:\s*\K[0-9]+' ${log_name})
-ymax_cwnd=$(echo "${max_cwnd_global} + ${max_cwnd_global} * 0.2 * ${parallel}" | bc)
+ymax_cwnd=$(echo "${max_cwnd_global} + ${max_cwnd_global} * 0.4 * ${parallel}" | bc)
 ymax_srtt=$(echo "${max_srtt_global} + ${max_srtt_global} * 0.5 * ${parallel}" | bc)
 ymax_thruput=$(echo "${max_thruput_timeline} * 1.4" | bc)
 #echo "total_socks: [${total_socks}], ymax_srtt: [${ymax_srtt}], ymax_cwnd: [${ymax_cwnd}]"
