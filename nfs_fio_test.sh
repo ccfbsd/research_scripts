@@ -27,7 +27,7 @@ case "$WORKLOAD" in
     ;;
   medium)
     BS=64k
-    FILE_SIZE=2G
+    FILE_SIZE=1G
     RWMIX=70
     IODEPTH=8
     NUMJOBS=2
@@ -35,7 +35,7 @@ case "$WORKLOAD" in
     ;;
   large)
     BS=256k
-    FILE_SIZE=8G
+    FILE_SIZE=2G
     RWMIX=60
     IODEPTH=16
     NUMJOBS=4
