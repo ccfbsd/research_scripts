@@ -3,7 +3,7 @@
 # Usage: ./setup_nfs_client.sh SERVER_IP EXPORT_DIR MOUNT_DIR
 
 SERVER=${1}
-EXPORT_DIR=${2:-/tmp}
+EXPORT_DIR=${2:-/mnt/nfs_mem}
 MOUNT_DIR=${3:-/mnt/nfs}
 
 if [ -z "${SERVER}" ]; then

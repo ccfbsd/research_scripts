@@ -1,8 +1,10 @@
 #!/bin/sh
 # Flexible NFS server setup on FreeBSD
 # Usage: ./setup_nfs_server.sh /export/dir client1_IP client2_IP ...
+set -e
 
-EXPORT_DIR=${1:-/tmp}
+# Default export directory (memory filesystem)
+EXPORT_DIR=${1:-/mnt/nfs_mem}
 shift
 CLIENTS="$@"
 
@@ -11,10 +13,16 @@ if [ -z "${CLIENTS}" ]; then
     exit 1
 fi
 
-echo ">>> Setting up NFS export: ${EXPORT_DIR} for clients: ${CLIENTS}"
+echo ">>> Setting up NFS export: ${EXPORT_DIR} Size: 2GB for clients: ${CLIENTS}"
+
+# Make sure tmpfs is available
+kldstat -m tmpfs >/dev/null 2>&1 || kldload tmpfs
 
 # Ensure export directory exists
 mkdir -p ${EXPORT_DIR}
+
+# Mount tmpfs (swap-backed memory filesystem)
+mount -t tmpfs -o size=2G tmpfs "$EXPORT_DIR"
 
 # Build /etc/exports entry
 EXPORTS_LINE="${EXPORT_DIR} -maproot=root -network ${CLIENTS}"
