@@ -17,9 +17,10 @@ fi
 WORKLOAD=$1
 MNT_POINT=${2:-/mnt/nfs}   # default mount directory
 TIMESTAMP=$(date '+%Y-%m-%d_%H:%M:%S %Z')
-CSV_FILE="nfs_traffic_summary.${WORKLOAD}.csv"
-OUTFILE="$MNT_POINT/fio_testfile_$WORKLOAD"
-JSON_FILE="fio_output_${WORKLOAD}.json"
+HOSTNAME=$(hostname | awk -F. '{print $1}')
+CSV_FILE="${HOSTNAME}_nfs_traffic_summary.${WORKLOAD}.csv"
+OUTFILE="${MNT_POINT}/fio_testfile_${WORKLOAD}"
+JSON_FILE="${HOSTNAME}_fio_output_${WORKLOAD}.json"
 
 # -------------------------
 # Helper functions
@@ -88,7 +89,7 @@ case "$WORKLOAD" in
     echo "Unknown workload: $WORKLOAD"; exit 1 ;;
 esac
 
-LOG_FILE="${NODE_TYPE}_fio_${WORKLOAD}.log"
+LOG_FILE="${HOSTNAME}_${NODE_TYPE}_fio_${WORKLOAD}.log"
 
 # Append to LOG_FILE
 if [ ! -f $LOG_FILE ]; then
@@ -156,7 +157,3 @@ if [ ! -f $CSV_FILE ]; then
 fi
 
 echo "$TIMESTAMP,$NODE_TYPE,$WORKLOAD,$MNT_POINT,$BS,$FILE_SIZE,$RWMIX,$HR_READ_BW,$HR_READ_IOPS,$HR_READ_LAT,$HR_READ_LAT_95,$HR_WRITE_BW,$HR_WRITE_IOPS,$HR_WRITE_LAT,$HR_WRITE_LAT_95" >> $CSV_FILE
-
-# Cleanup
-rm -f $OUTFILE
-echo "Test file $OUTFILE removed."
