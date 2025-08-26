@@ -90,7 +90,13 @@ esac
 
 LOG_FILE="${NODE_TYPE}_fio_${WORKLOAD}.log"
 
-echo "Running NFS traffic simulation:" | tee ${LOG_FILE}
+# Append to LOG_FILE
+if [ ! -f $LOG_FILE ]; then
+    printf "Running NFS traffic simulation:\n" | tee ${LOG_FILE}
+else
+    printf "\nRunning NFS traffic simulation:\n" | tee -a ${LOG_FILE}
+fi
+
 echo "Workload: $WORKLOAD" | tee -a ${LOG_FILE}
 echo "Node Type: $NODE_TYPE" | tee -a ${LOG_FILE}
 echo "Mount point: $MNT_POINT" | tee -a ${LOG_FILE}
@@ -142,7 +148,7 @@ echo "Simulation finished. Results:" | tee -a ${LOG_FILE}
 echo "Timestamp:   $TIMESTAMP" | tee -a ${LOG_FILE}
 echo "Read:  BW=$HR_READ_BW, IOPS=$HR_READ_IOPS, Avg Lat=$HR_READ_LAT, 95th Lat=$HR_READ_LAT_95" | tee -a ${LOG_FILE}
 echo "Write: BW=$HR_WRITE_BW, IOPS=$HR_WRITE_IOPS, Avg Lat=$HR_WRITE_LAT, 95th Lat=$HR_WRITE_LAT_95" | tee -a ${LOG_FILE}
-echo "-----------------------------------------------------" | tee -a ${LOG_FILE}
+printf "-----------------------------------------------------\n" | tee -a ${LOG_FILE}
 
 # Append to CSV (human-readable)
 if [ ! -f $CSV_FILE ]; then
