@@ -88,14 +88,16 @@ case "$WORKLOAD" in
     echo "Unknown workload: $WORKLOAD"; exit 1 ;;
 esac
 
-echo "Running NFS traffic simulation:"
-echo "Workload: $WORKLOAD"
-echo "Node Type: $NODE_TYPE"
-echo "Mount point: $MNT_POINT"
-echo "Block size: $BS, File size: $FILE_SIZE, Read mix: $RWMIX%"
-echo "IO depth: $IODEPTH, Num jobs: $NUMJOBS, Runtime: $RUNTIME sec"
-echo "IO Engine: $IOENGINE"
-echo "-----------------------------------------------------"
+LOG_FILE="${NODE_TYPE}_fio_${WORKLOAD}.log"
+
+echo "Running NFS traffic simulation:" | tee ${LOG_FILE}
+echo "Workload: $WORKLOAD" | tee -a ${LOG_FILE}
+echo "Node Type: $NODE_TYPE" | tee -a ${LOG_FILE}
+echo "Mount point: $MNT_POINT" | tee -a ${LOG_FILE}
+echo "Block size: $BS, File size: $FILE_SIZE, Read mix: $RWMIX%" | tee -a ${LOG_FILE}
+echo "IO depth: $IODEPTH, Num jobs: $NUMJOBS, Runtime: $RUNTIME sec" | tee -a ${LOG_FILE}
+echo "IO Engine: $IOENGINE" | tee -a ${LOG_FILE}
+echo "-----------------------------------------------------" | tee -a ${LOG_FILE}
 
 # Run fio
 fio --name=test --rw=randrw --rwmixread=$RWMIX \
@@ -136,11 +138,11 @@ HR_READ_LAT_95=$(human_lat $READ_LAT_95_US)
 HR_WRITE_LAT_95=$(human_lat $WRITE_LAT_95_US)
 
 # Display summary
-echo "Simulation finished. Results:"
-echo "Timestamp:   $TIMESTAMP"
-echo "Read:  BW=$HR_READ_BW, IOPS=$HR_READ_IOPS, Avg Lat=$HR_READ_LAT, 95th Lat=$HR_READ_LAT_95"
-echo "Write: BW=$HR_WRITE_BW, IOPS=$HR_WRITE_IOPS, Avg Lat=$HR_WRITE_LAT, 95th Lat=$HR_WRITE_LAT_95"
-echo "-----------------------------------------------------"
+echo "Simulation finished. Results:" | tee -a ${LOG_FILE}
+echo "Timestamp:   $TIMESTAMP" | tee -a ${LOG_FILE}
+echo "Read:  BW=$HR_READ_BW, IOPS=$HR_READ_IOPS, Avg Lat=$HR_READ_LAT, 95th Lat=$HR_READ_LAT_95" | tee -a ${LOG_FILE}
+echo "Write: BW=$HR_WRITE_BW, IOPS=$HR_WRITE_IOPS, Avg Lat=$HR_WRITE_LAT, 95th Lat=$HR_WRITE_LAT_95" | tee -a ${LOG_FILE}
+echo "-----------------------------------------------------" | tee -a ${LOG_FILE}
 
 # Append to CSV (human-readable)
 if [ ! -f $CSV_FILE ]; then
