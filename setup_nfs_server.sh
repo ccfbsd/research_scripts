@@ -4,14 +4,15 @@
 
 set -e
 
-EXPORT_DIR=${1:-/mnt/nfs_mem}
-shift
-CLIENTS="$@"
-
-if [ -z "${CLIENTS}" ]; then
+# --- Usage check first ---
+if [ $# -lt 2 ]; then
     echo "Usage: $0 EXPORT_DIR client1 [client2 ...]"
     exit 1
 fi
+
+EXPORT_DIR=${1:-/mnt/nfs_mem}
+shift
+CLIENTS="$@"
 
 echo ">>> Setting up NFS export: ${EXPORT_DIR} for clients: ${CLIENTS}"
 
