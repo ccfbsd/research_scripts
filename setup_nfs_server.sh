@@ -13,6 +13,7 @@ fi
 EXPORT_DIR=${1:-/mnt/nfs_mem}
 shift
 CLIENTS="$@"
+EXPORT_SIZE=6G          # default volumn size
 
 echo ">>> Setting up NFS export: ${EXPORT_DIR} for clients: ${CLIENTS}"
 
@@ -30,8 +31,8 @@ if [ "$OS" = "FreeBSD" ]; then
     # Load tmpfs if needed
     kldstat -m tmpfs >/dev/null 2>&1 || kldload tmpfs
     
-    # Mount tmpfs (2G)
-    mount -t tmpfs -o size=2G tmpfs "${EXPORT_DIR}"
+    # Mount tmpfs
+    mount -t tmpfs -o size="${EXPORT_SIZE}" tmpfs "${EXPORT_DIR}"
     
     # Build /etc/exports
     {
@@ -59,8 +60,8 @@ elif [ "$OS" = "Linux" ]; then
     echo ">>> Using Linux NFS setup"
 
     # tmpfs is builtin, no need to modprobe
-    # Mount tmpfs (2G)
-    mount -t tmpfs -o size=2G tmpfs "${EXPORT_DIR}" || true
+    # Mount tmpfs
+    mount -t tmpfs -o size="${EXPORT_SIZE}" tmpfs "${EXPORT_DIR}" || true
 
     # Write /etc/exports (Linux)
     {
