@@ -91,3 +91,5 @@ else
     echo "!!! Unsupported OS: $OS"
     exit 1
 fi
+
+df -h "${EXPORT_DIR}"

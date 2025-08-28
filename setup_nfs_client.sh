@@ -41,3 +41,5 @@ else
     # Fallback: use mount output
     mount | grep "${MOUNT_DIR}"
 fi
+
+df -h "${MOUNT_DIR}"
