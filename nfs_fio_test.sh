@@ -132,7 +132,7 @@ run_fio() {
 
     # --- CSV header auto-create ---
     if [ ! -f "${CSV_FILE}" ]; then
-        echo "timestamp,node_type,workload,mount_point,block_size,file_size,rwmix,read_bw_kBps,read_iops,read_lat_us,read_lat95_us,write_bw_kBps,write_iops,write_lat_us,write_lat95_us" > "${CSV_FILE}"
+        echo "timestamp,node_type,workload,mount_point,block_size,file_size,rwmix,read_bw_Bps,read_iops,read_lat_us,read_lat95_us,write_bw_Bps,write_iops,write_lat_us,write_lat95_us" > "${CSV_FILE}"
     fi
 
     # ---- CSV output (raw numbers, no units) ----
