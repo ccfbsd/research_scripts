@@ -31,7 +31,7 @@ esac
 # Detect node type (Linux/FreeBSD specific path, fallback unknown)
 if [ -x /usr/libexec/emulab/nodetype ]; then
     NODE_TYPE=$(/usr/libexec/emulab/nodetype | awk '{print $1}')
-elif [ -x /usr/local/bin/nodetype ]; then
+elif [ -x /usr/local/etc/emulab/nodetype ]; then
     NODE_TYPE=$(/usr/local/etc/emulab/nodetype | awk '{print $1}')
 else
     NODE_TYPE="unknown"
