@@ -30,9 +30,9 @@ esac
 
 # Detect node type (Linux/FreeBSD specific path, fallback unknown)
 if [ -x /usr/libexec/emulab/nodetype ]; then
-    NODE_TYPE=$(/usr/libexec/emulab/nodetype | awk '{print $1}')
+    NODE_TYPE=$(/usr/libexec/emulab/nodetype)
 elif [ -x /usr/local/etc/emulab/nodetype ]; then
-    NODE_TYPE=$(/usr/local/etc/emulab/nodetype | awk '{print $1}')
+    NODE_TYPE=$(/usr/local/etc/emulab/nodetype)
 else
     NODE_TYPE="unknown"
     echo ">>> Warning: nodetype command not found, using 'unknown'"
