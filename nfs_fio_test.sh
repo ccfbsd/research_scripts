@@ -45,12 +45,14 @@ LOG_FILE="${HOSTNAME}_${NODE_TYPE}_fio_results.log"
 # Helper functions
 # -------------------------
 
-# Convert KB/s to human-readable units
+# Convert Bytes/s to human-readable units
 human_bw() {
-    val=$1
+    # bits/s first
+    val=$(( $1 * 8 ))
     awk -v v="$val" 'BEGIN {
-        if (v >= 1048576) printf "%.1f GB/s", v/1048576;
-        else if (v >= 1024) printf "%.1f MB/s", v/1024;
+        if (v >= 1000000000) printf "%.1f Gb/s", v/1000000000;
+        else if (v >= 1000000) printf "%.1f Mb/s", v/1000000;
+        else if (v >= 1000) printf "%.1f Kb/s", v/1000;
         else printf "%.0f KB/s", v;
     }'
 }
@@ -76,9 +78,9 @@ human_lat() {
 # Fio workload definitions
 get_workload_params() {
     case $1 in
-        small)  BS=8k;   FILE_SIZE=512M; RWMIX=80; IODEPTH=4;  NUMJOBS=1; RUNTIME=30 ;;
-        medium) BS=64k;  FILE_SIZE=1G;   RWMIX=70; IODEPTH=8;  NUMJOBS=2; RUNTIME=60 ;;
-        large)  BS=512k; FILE_SIZE=2G;   RWMIX=60; IODEPTH=16; NUMJOBS=4; RUNTIME=120 ;;
+        small)  BS=8k;   FILE_SIZE=512M; RWMIX=80; IODEPTH=32;  NUMJOBS=8; RUNTIME=30 ;;
+        medium) BS=64k;  FILE_SIZE=1G;   RWMIX=80; IODEPTH=16;  NUMJOBS=8; RUNTIME=60 ;;
+        large)  BS=512k; FILE_SIZE=2G;   RWMIX=80; IODEPTH=8;   NUMJOBS=8; RUNTIME=120 ;;
         *) echo "Unknown workload: $1"; exit 1 ;;
     esac
 }
@@ -106,19 +108,18 @@ run_fio() {
     echo "-----------------------------------------------------" | tee -a $LOG_FILE
 
     # Run Fio
-    fio --name=test --rw=randrw --rwmixread=$RWMIX \
-        --bs=$BS --size=$FILE_SIZE --ioengine=$IOENGINE \
-        --iodepth=$IODEPTH --numjobs=$NUMJOBS --runtime=$RUNTIME \
-        --time_based --overwrite=1 --direct=1 --filename=$OUTFILE \
-        --output-format=json --output=$JSON_FILE
+    fio --name=test --rw=randrw --rwmixread=$RWMIX --bs=$BS --group_reporting \
+        --size=$FILE_SIZE --ioengine=$IOENGINE --iodepth=$IODEPTH \
+        --numjobs=$NUMJOBS --runtime=$RUNTIME --time_based --overwrite=1 \
+        --direct=1 --filename=$OUTFILE --output-format=json --output=$JSON_FILE
 
     # Extract raw numbers
-    READ_BW=$(jq '.jobs[0].read.bw' $JSON_FILE)              # KB/s
-    READ_IOPS=$(jq '.jobs[0].read.iops' $JSON_FILE)          # IOPS
-    READ_LAT_US=$(jq '.jobs[0].read.lat_ns.mean' $JSON_FILE) # ns
+    READ_BW=$(jq '.jobs[0].read.bw_bytes' $JSON_FILE)               # Bytes/s
+    READ_IOPS=$(jq '.jobs[0].read.iops' $JSON_FILE)                 # IOPS
+    READ_LAT_US=$(jq '.jobs[0].read.lat_ns.mean' $JSON_FILE)        # ns
     READ_LAT_95_US=$(jq '.jobs[0].read.clat_ns.percentile["95.000000"]' $JSON_FILE)
 
-    WRITE_BW=$(jq '.jobs[0].write.bw' $JSON_FILE)
+    WRITE_BW=$(jq '.jobs[0].write.bw_bytes' $JSON_FILE)
     WRITE_IOPS=$(jq '.jobs[0].write.iops' $JSON_FILE)
     WRITE_LAT_US=$(jq '.jobs[0].write.lat_ns.mean' $JSON_FILE)
     WRITE_LAT_95_US=$(jq '.jobs[0].write.clat_ns.percentile["95.000000"]' $JSON_FILE)
